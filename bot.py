@@ -2,20 +2,17 @@ import telebot
 from telebot import types
 from datetime import datetime
 
-TOKEN = "8001018826:AAGvAcroIadQmFyn5GAiVr7HlIgVhvDxMT0"
-ADMIN_ID ="8442941172"
+TOKEN = "8001018826:AAHHjX1M02nMVNSd9uBLly6f83ihli1cp68"
+ADMIN_ID = 8442941172
 
-bot = telebot.TeleBot("8001018826:AAGvAcroIadQmFyn5GAiVr7HlIgVhvDxMT0")
+bot = telebot.TeleBot(8001018826:AAHHjX1M02nMVNSd9uBLly6f83ihli1cp68)
 
-# База заказов
 orders = []
 user_data = {}
 
-# Проверка админа
 def is_admin(message):
-    return message.chat.id == '8442941172"
+    return message.chat.id == ADMIN_ID
 
-# СТАРТ
 @bot.message_handler(commands=['start'])
 def start(message):
     if is_admin(message):
@@ -23,7 +20,6 @@ def start(message):
     else:
         client_menu(message)
 
-# КЛИЕНТСКОЕ МЕНЮ
 def client_menu(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add("⚡ Электрочайники", "👟 Роликовые кроссовки")
@@ -52,32 +48,26 @@ def question(message):
     bot.send_message(message.chat.id,
     "❓ Напишите ваш вопрос — мы ответим в течение 30 минут!")
 
-# ЗАКАЗ ОТ КЛИЕНТА
 @bot.message_handler(commands=['order'])
 def order(message):
     user_data[message.chat.id] = {'source': 'client'}
     bot.send_message(message.chat.id, "📦 Оформляем заказ!\n\nНапишите название товара:")
     bot.register_next_step_handler(message, get_product)
 
-# АДМИН ПАНЕЛЬ
 @bot.message_handler(commands=['admin'])
 def admin_panel(message):
     if not is_admin(message):
         bot.send_message(message.chat.id, "❌ Нет доступа!")
         return
-    
     today = datetime.now().strftime('%d.%m.%Y')
     today_orders = [o for o in orders if o['date'] == today]
     today_sum = sum(o.get('price', 0) for o in today_orders)
-    
     month = datetime.now().strftime('%m.%Y')
     month_orders = [o for o in orders if o['date'].endswith(month[2:])]
     month_sum = sum(o.get('price', 0) for o in month_orders)
-    
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add("➕ Новый заказ", "📋 Все заказы")
     markup.add("📊 Статистика", "🔙 Выход")
-    
     bot.send_message(message.chat.id,
     f"👑 АДМИН ПАНЕЛЬ — SOOQ.TJ\n\n"
     f"📦 Заказов сегодня: {len(today_orders)}\n"
@@ -111,7 +101,6 @@ def exit_admin(message):
     bot.send_message(message.chat.id, "Вышел из админ панели")
     client_menu(message)
 
-# СБОР ДАННЫХ ЗАКАЗА
 def get_product(message):
     user_data[message.chat.id]['product'] = message.text
     bot.send_message(message.chat.id, "Имя клиента:")
@@ -137,14 +126,11 @@ def get_price(message):
         price = int(message.text)
     except:
         price = 0
-    
     data = user_data[message.chat.id]
     data['price'] = price
     data['date'] = datetime.now().strftime('%d.%m.%Y')
     data['time'] = datetime.now().strftime('%H:%M')
     orders.append(data)
-    
-    # Уведомление админу
     bot.send_message(ADMIN_ID,
     f"🛒 НОВЫЙ ЗАКАЗ!\n\n"
     f"👤 Имя: {data['name']}\n"
@@ -153,7 +139,6 @@ def get_price(message):
     f"📍 Адрес: {data['address']}\n"
     f"💰 Сумма: {data['price']} сомони\n"
     f"🕐 Время: {data['time']}")
-    
     if message.chat.id == ADMIN_ID:
         bot.send_message(message.chat.id, "✅ Заказ добавлен!")
         admin_panel(message)
@@ -162,16 +147,3 @@ def get_price(message):
         "✅ Заказ принят!\n\nМы свяжемся с вами в течение 30 минут. Спасибо! 🙏")
 
 bot.polling()
-
-import os
-import telebot
-
-TOKEN = os.getenv("8001018826:AAGvAcroIadQmFyn5GAiVr7HlIgVhvDxMT0")  # токен берём из Railway Variables
-bot = telebot.TeleBot(TOKEN)
-
-@bot.message_handler(commands=['start'])
-def start(message):
-    bot.reply_to(message, "Привет! Я бот.")
-
-bot.polling()
-
