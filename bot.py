@@ -3,10 +3,9 @@ from telebot import types
 from datetime import datetime
 
 TOKEN = "8001018826:AAGvAcroIadQmFyn5GAiVr7HlIgVhvDxMT0"
-ADMIN_ID = 8442941172
+ADMIN_ID ="8442941172"
 
-bot = telebot.bot =("8001018826:AAGvAcroIadQmFyn5GAiVr7HlIgVhvDxMT0")
-
+bot = telebot.TeleBot("8001018826:AAGvAcroIadQmFyn5GAiVr7HlIgVhvDxMT0")
 
 # База заказов
 orders = []
@@ -14,7 +13,7 @@ user_data = {}
 
 # Проверка админа
 def is_admin(message):
-    return message.chat.id == 8442941172
+    return message.chat.id == '8442941172"
 
 # СТАРТ
 @bot.message_handler(commands=['start'])
@@ -163,3 +162,16 @@ def get_price(message):
         "✅ Заказ принят!\n\nМы свяжемся с вами в течение 30 минут. Спасибо! 🙏")
 
 bot.polling()
+
+import os
+import telebot
+
+TOKEN = os.getenv("8001018826:AAGvAcroIadQmFyn5GAiVr7HlIgVhvDxMT0")  # токен берём из Railway Variables
+bot = telebot.TeleBot(TOKEN)
+
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.reply_to(message, "Привет! Я бот.")
+
+bot.polling()
+
