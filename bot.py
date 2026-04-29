@@ -5,7 +5,8 @@ from datetime import datetime
 TOKEN = "8001018826:AAGvAcroIadQmFyn5GAiVr7HlIgVhvDxMT0"
 ADMIN_ID = 8442941172
 
-bot = telebot.TeleBot(8001018826:AAGvAcroIadQmFyn5GAiVr7HlIgVhvDxMT0)
+bot = telebot.bot =("8001018826:AAGvAcroIadQmFyn5GAiVr7HlIgVhvDxMT0")
+
 
 # База заказов
 orders = []
