@@ -5,7 +5,7 @@ from datetime import datetime
 TOKEN = "8001018826:AAGvAcroIadQmFyn5GAiVr7HlIgVhvDxMT0"
 ADMIN_ID = 8442941172
 
-bot = telebot.TeleBot(TOKEN)
+bot = telebot.TeleBot(8001018826:AAGvAcroIadQmFyn5GAiVr7HlIgVhvDxMT0)
 
 # База заказов
 orders = []
@@ -13,7 +13,7 @@ user_data = {}
 
 # Проверка админа
 def is_admin(message):
-    return message.chat.id == ADMIN_ID
+    return message.chat.id == 8442941172
 
 # СТАРТ
 @bot.message_handler(commands=['start'])
