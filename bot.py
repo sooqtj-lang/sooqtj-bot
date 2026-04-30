@@ -6,15 +6,17 @@ import requests
 import json
 
 # ==================== КОНФИГ ====================
-TOKEN = os.getenv("BOT_TOKEN", "8001018826:AAGvAcroIadQmFyn5GAiVr7HlIgVhvDxMT0")
+TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = 8442941172
 SHEETS_ID = "1cQFtfRJY0n5vb6p19OF96sWmFBffpE01"
+DRIVER_PASSWORD = os.getenv("DRIVER_PASSWORD", "1234")  # пароль меняй в Railway Variables
 
 bot = telebot.TeleBot(TOKEN)
 
-# База заказов (в памяти)
+# База данных (в памяти)
 orders = []
 user_data = {}
+drivers = set()  # Telegram ID авторизованных доставщиков
 
 # ==================== GOOGLE SHEETS ====================
 def get_products():
@@ -55,6 +57,9 @@ def save_order_to_sheets(order_data):
 # ==================== ВСПОМОГАТЕЛЬНЫЕ ====================
 def is_admin(message):
     return message.chat.id == ADMIN_ID
+
+def is_driver(message):
+    return message.chat.id in drivers
 
 # ==================== СТАРТ ====================
 @bot.message_handler(commands=['start'])
@@ -371,6 +376,153 @@ def refresh_catalog(message):
 
 @bot.message_handler(func=lambda m: m.text == "🔙 Выход" and is_admin(m))
 def exit_admin(message):
+    client_menu(message)
+
+# ==================== ПАНЕЛЬ ДОСТАВЩИКА ====================
+@bot.message_handler(commands=['driver'])
+def driver_login(message):
+    parts = message.text.strip().split()
+    if len(parts) < 2:
+        bot.send_message(message.chat.id, "🔐 Введите пароль:\n/driver <пароль>")
+        return
+    
+    password = parts[1]
+    if password == DRIVER_PASSWORD:
+        drivers.add(message.chat.id)
+        driver_panel(message)
+    else:
+        bot.send_message(message.chat.id, "❌ Неверный пароль!")
+
+def driver_panel(message):
+    # Считаем активные заказы
+    active = [o for o in orders if o.get('status') in ['⏳ Новый', '🚚 В пути']]
+    
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add("📋 Мои заказы", "🔄 Обновить список")
+    markup.add("🚪 Выйти")
+    
+    bot.send_message(
+        message.chat.id,
+        f"🚚 *ПАНЕЛЬ ДОСТАВЩИКА — SOOQ.TJ*\n\n"
+        f"📦 Активных заказов: {len(active)}\n\n"
+        f"Выберите действие:",
+        reply_markup=markup,
+        parse_mode="Markdown"
+    )
+
+@bot.message_handler(func=lambda m: m.text in ["📋 Мои заказы", "🔄 Обновить список"] and is_driver(m))
+def driver_orders(message):
+    active = [o for o in orders if o.get('status') in ['⏳ Новый', '🚚 В пути']]
+    
+    if not active:
+        bot.send_message(message.chat.id, "📭 Активных заказов нет")
+        return
+    
+    for i, order in enumerate(active):
+        real_idx = orders.index(order)
+        
+        text = (
+            f"📦 *Заказ #{real_idx + 1}*\n\n"
+            f"👤 {order.get('name', '—')}\n"
+            f"📱 {order.get('phone', '—')}\n"
+            f"📍 {order.get('address', '—')}\n"
+            f"🛍 {order.get('product', '—')}\n"
+            f"💰 {order.get('price', 0)} сомони\n"
+            f"🕐 {order.get('date', '')} {order.get('time', '')}\n"
+            f"🔘 Статус: {order.get('status', '—')}"
+        )
+        
+        markup = types.InlineKeyboardMarkup()
+        markup.row(
+            types.InlineKeyboardButton("⏳ В ожидании", callback_data=f"dstatus_{real_idx}_waiting"),
+            types.InlineKeyboardButton("🚚 В пути",     callback_data=f"dstatus_{real_idx}_transit")
+        )
+        markup.row(
+            types.InlineKeyboardButton("✅ Доставлено",  callback_data=f"dstatus_{real_idx}_delivered"),
+            types.InlineKeyboardButton("↩️ Возврат",    callback_data=f"dstatus_{real_idx}_returned")
+        )
+        
+        bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode="Markdown")
+
+@bot.callback_query_handler(func=lambda c: c.data.startswith("dstatus_"))
+def driver_update_status(call):
+    if call.message.chat.id not in drivers:
+        bot.answer_callback_query(call.id, "❌ Нет доступа")
+        return
+    
+    parts = call.data.split("_")
+    order_idx = int(parts[1])
+    new_status = parts[2]
+    
+    status_map = {
+        'waiting':   '⏳ В ожидании',
+        'transit':   '🚚 В пути',
+        'delivered': '✅ Доставлено',
+        'returned':  '↩️ Возврат'
+    }
+    
+    if order_idx >= len(orders):
+        bot.answer_callback_query(call.id, "Заказ не найден")
+        return
+    
+    orders[order_idx]['status'] = status_map[new_status]
+    status_text = status_map[new_status]
+    
+    # Уведомляем клиента
+    client_id = orders[order_idx].get('chat_id')
+    if client_id and client_id != ADMIN_ID:
+        try:
+            bot.send_message(
+                client_id,
+                f"📦 *Обновление вашего заказа*\n\n"
+                f"Товар: {orders[order_idx]['product']}\n"
+                f"Статус: {status_text}",
+                parse_mode="Markdown"
+            )
+        except:
+            pass
+    
+    # Уведомляем админа
+    try:
+        bot.send_message(
+            ADMIN_ID,
+            f"🔔 *Статус заказа #{order_idx + 1} обновлён*\n\n"
+            f"👤 {orders[order_idx].get('name','—')}\n"
+            f"📦 {orders[order_idx].get('product','—')}\n"
+            f"🔘 {status_text}",
+            parse_mode="Markdown"
+        )
+    except:
+        pass
+    
+    bot.answer_callback_query(call.id, f"✅ {status_text}")
+    
+    # Обновляем кнопки в сообщении
+    markup = types.InlineKeyboardMarkup()
+    markup.row(
+        types.InlineKeyboardButton("⏳ В ожидании", callback_data=f"dstatus_{order_idx}_waiting"),
+        types.InlineKeyboardButton("🚚 В пути",     callback_data=f"dstatus_{order_idx}_transit")
+    )
+    markup.row(
+        types.InlineKeyboardButton("✅ Доставлено",  callback_data=f"dstatus_{order_idx}_delivered"),
+        types.InlineKeyboardButton("↩️ Возврат",    callback_data=f"dstatus_{order_idx}_returned")
+    )
+    
+    try:
+        bot.edit_message_text(
+            call.message.text + f"\n\n✅ *Обновлено: {status_text}*",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=markup,
+            parse_mode="Markdown"
+        )
+    except:
+        pass
+
+@bot.message_handler(func=lambda m: m.text == "🚪 Выйти" and is_driver(m))
+def driver_logout(message):
+    drivers.discard(message.chat.id)
+    bot.send_message(message.chat.id, "👋 Вышли из панели доставщика")
     client_menu(message)
 
 # ==================== ЗАПУСК ====================
