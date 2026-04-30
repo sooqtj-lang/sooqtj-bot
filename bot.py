@@ -1,9 +1,10 @@
 import os
+import csv
+import io
 import telebot
 from telebot import types
 from datetime import datetime
 import requests
-import json
 
 # ==================== КОНФИГ ====================
 TOKEN = os.getenv("BOT_TOKEN")
@@ -20,33 +21,38 @@ drivers = set()  # Telegram ID авторизованных доставщико
 
 # ==================== GOOGLE SHEETS ====================
 def get_products():
-    """Читаем товары из Google Sheets (публичный доступ)"""
     try:
-        url = f"https://docs.google.com/spreadsheets/d/{SHEETS_ID}/gviz/tq?tqx=out:json&sheet=Товары%20SOOQ"
+        # Используем CSV экспорт — более надёжный способ
+        url = f"https://docs.google.com/spreadsheets/d/{SHEETS_ID}/export?format=csv&sheet=Товары%20SOOQ"
+        print(f"DEBUG: Запрос CSV...")
         response = requests.get(url, timeout=10)
-        text = response.text
-        # Убираем обёртку google.visualization.Query.setResponse(...)
-        start = text.find('{')
-        end = text.rfind('}') + 1
-        data = json.loads(text[start:end])
-        
+        print(f"DEBUG: Статус {response.status_code}")
+        print(f"DEBUG: Первые 300 символов: {response.text[:300]}")
+
+        if response.status_code != 200:
+            print(f"ОШИБКА: Статус {response.status_code}")
+            return []
+
+        lines = response.text.strip().split('\n')
+        if len(lines) < 2:
+            print("ОШИБКА: Таблица пустая")
+            return []
+
+        # Первая строка — заголовки
+        reader = csv.DictReader(io.StringIO(response.text))
         products = []
-        rows = data['table']['rows']
-        cols = data['table']['cols']
-        
-        for row in rows:
-            if not row['c'] or not row['c'][0] or not row['c'][0].get('v'):
+        for row in reader:
+            # Пропускаем пустые строки
+            if not any(row.values()):
                 continue
-            product = {}
-            for i, col in enumerate(cols):
-                if i < len(row['c']) and row['c'][i]:
-                    product[col['label'] or f'col{i}'] = row['c'][i].get('v', '')
-                else:
-                    product[col['label'] or f'col{i}'] = ''
-            products.append(product)
+            products.append(dict(row))
+
+        print(f"DEBUG: Загружено товаров: {len(products)}")
+        if products:
+            print(f"DEBUG: Первый товар: {products[0]}")
         return products
     except Exception as e:
-        print(f"Ошибка чтения таблицы: {e}")
+        print(f"ОШИБКА get_products: {e}")
         return []
 
 def save_order_to_sheets(order_data):
@@ -77,26 +83,27 @@ def client_menu(message):
     bot.send_message(
         message.chat.id,
         "Салом! 👋 Хуш омадед ба SOOQ.TJ!\n\n"
-        "Электроника и бытовая техника из Китая 🇨🇳\n\n"
+        "Электроника и бытовая техника в Душанбе 🇨🇳\n\n"
         "Выберите раздел:",
         reply_markup=markup
     )
 
 # ==================== КАТАЛОГ ====================
-@bot.message_handler(func=lambda m: m.text == "🛍 Каталог товаров" and not is_admin(m))
+@bot.message_handler(func=lambda m: m.text == "🛍 Каталог товаров")
 def catalog(message):
+    bot.send_message(message.chat.id, "⏳ Загружаю каталог...")
     products = get_products()
+    
     if not products:
-        bot.send_message(message.chat.id, "⏳ Загружаем каталог... Попробуйте через минуту.")
+        bot.send_message(message.chat.id, 
+            "❌ Не удалось загрузить каталог.\n"
+            "Проверьте доступ к таблице или напишите /start")
         return
 
     markup = types.InlineKeyboardMarkup()
-    
-    # Показываем первые 20 товаров кнопками
     for i, p in enumerate(products[:20]):
         name = p.get('Название (RU)') or p.get('col2') or f"Товар {i+1}"
         price = p.get('Продажная цена') or p.get('col6') or '—'
-        
         btn_text = f"{name} — {price} сом"
         markup.add(types.InlineKeyboardButton(btn_text, callback_data=f"product_{i}"))
     
