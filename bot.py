@@ -8,7 +8,7 @@ import requests
 
 # ==================== КОНФИГ ====================
 TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = 8329284632
+ADMIN_ID = 8442941172
 SHEETS_ID = "1RoLKPZQY675Bv16GoMZDW7Sv_s77s0lKu-s2mVj3qA8"
 DRIVER_PASSWORD = os.getenv("DRIVER_PASSWORD", "1234")  # пароль меняй в Railway Variables
 
@@ -316,8 +316,9 @@ def update_status(call):
 # ==================== АДМИН ПАНЕЛЬ ====================
 @bot.message_handler(commands=['admin'])
 def admin_cmd(message):
+    print(f"DEBUG admin: chat_id={message.chat.id}, ADMIN_ID={ADMIN_ID}, match={message.chat.id == ADMIN_ID}")
     if not is_admin(message):
-        bot.send_message(message.chat.id, "❌ Нет доступа!")
+        bot.send_message(message.chat.id, f"❌ Нет доступа! Ваш ID: {message.chat.id}")
         return
     admin_panel(message)
 
