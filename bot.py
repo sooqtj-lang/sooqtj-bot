@@ -33,13 +33,9 @@ def get_products():
             print(f"ОШИБКА: Статус {response.status_code}")
             return []
 
-        lines = response.text.strip().split('\n')
-        if len(lines) < 2:
-            print("ОШИБКА: Таблица пустая")
-            return []
-
-        # Первая строка — заголовки
-        reader = csv.DictReader(io.StringIO(response.text))
+        # Декодируем правильно — Google Sheets CSV в UTF-8
+        content = response.content.decode('utf-8-sig')
+        reader = csv.DictReader(io.StringIO(content))
         products = []
         for row in reader:
             # Пропускаем пустые строки
@@ -83,7 +79,7 @@ def client_menu(message):
     bot.send_message(
         message.chat.id,
         "Салом! 👋 Хуш омадед ба SOOQ.TJ!\n\n"
-        "Электроника и бытовая техника в Душанбе 🇨🇳\n\n"
+        "Электроника и бытовая техника из Китая 🇨🇳\n\n"
         "Выберите раздел:",
         reply_markup=markup
     )
