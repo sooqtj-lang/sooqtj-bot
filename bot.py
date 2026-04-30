@@ -384,16 +384,22 @@ def exit_admin(message):
 @bot.message_handler(commands=['driver'])
 def driver_login(message):
     parts = message.text.strip().split()
+    print(f"DEBUG driver: parts={parts}, password_env='{DRIVER_PASSWORD}'")
+    
     if len(parts) < 2:
-        bot.send_message(message.chat.id, "🔐 Введите пароль:\n/driver <пароль>")
+        bot.send_message(message.chat.id, "🔐 Введите пароль:\n/driver 1234")
         return
     
-    password = parts[1]
-    if password == DRIVER_PASSWORD:
+    password = parts[1].strip()
+    expected = DRIVER_PASSWORD.strip()
+    
+    print(f"DEBUG driver: введён='{password}', ожидается='{expected}'")
+    
+    if password == expected:
         drivers.add(message.chat.id)
         driver_panel(message)
     else:
-        bot.send_message(message.chat.id, "❌ Неверный пароль!")
+        bot.send_message(message.chat.id, f"❌ Неверный пароль!")
 
 def driver_panel(message):
     # Считаем активные заказы
