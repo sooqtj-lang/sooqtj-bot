@@ -8,7 +8,7 @@ import json
 # ==================== КОНФИГ ====================
 TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = 8442941172
-SHEETS_ID = "1cQFtfRJY0n5vb6p19OF96sWmFBffpE01"
+SHEETS_ID = "1RoLKPZQY675Bv16GoMZDW7Sv_s77s0lKu-s2mVj3qA8"
 DRIVER_PASSWORD = os.getenv("DRIVER_PASSWORD", "1234")  # пароль меняй в Railway Variables
 
 bot = telebot.TeleBot(TOKEN)
@@ -22,7 +22,7 @@ drivers = set()  # Telegram ID авторизованных доставщико
 def get_products():
     """Читаем товары из Google Sheets (публичный доступ)"""
     try:
-        url = f"https://docs.google.com/spreadsheets/d/{SHEETS_ID}/gviz/tq?tqx=out:json&sheet=Sheet1"
+        url = f"https://docs.google.com/spreadsheets/d/{SHEETS_ID}/gviz/tq?tqx=out:json&sheet=Товары%20SOOQ"
         response = requests.get(url, timeout=10)
         text = response.text
         # Убираем обёртку google.visualization.Query.setResponse(...)
@@ -94,9 +94,8 @@ def catalog(message):
     
     # Показываем первые 20 товаров кнопками
     for i, p in enumerate(products[:20]):
-        # Пробуем разные названия колонок
-        name = p.get('Название') or p.get('название') or p.get('name') or p.get('col0') or f"Товар {i+1}"
-        price = p.get('Цена') or p.get('цена') or p.get('price') or p.get('col2') or '—'
+        name = p.get('Название (RU)') or p.get('col2') or f"Товар {i+1}"
+        price = p.get('Продажная цена') or p.get('col6') or '—'
         
         btn_text = f"{name} — {price} сом"
         markup.add(types.InlineKeyboardButton(btn_text, callback_data=f"product_{i}"))
@@ -117,10 +116,10 @@ def product_detail(call):
         return
     
     p = products[idx]
-    name = p.get('Название') or p.get('название') or p.get('col0') or f"Товар {idx+1}"
-    price = p.get('Цена') or p.get('цена') or p.get('col2') or '—'
-    qty = p.get('Количество') or p.get('количество') or p.get('col3') or '—'
-    desc = p.get('Описание') or p.get('описание') or p.get('col4') or ''
+    name = p.get('Название (RU)') or p.get('col2') or f"Товар {idx+1}"
+    price = p.get('Продажная цена') or p.get('col6') or '—'
+    qty = p.get('В наличии (шт)') or p.get('col9') or '—'
+    desc = p.get('Категория') or p.get('col3') or ''
 
     text = (
         f"📦 *{name}*\n\n"
@@ -147,8 +146,8 @@ def back_to_catalog(call):
     products = get_products()
     markup = types.InlineKeyboardMarkup()
     for i, p in enumerate(products[:20]):
-        name = p.get('Название') or p.get('col0') or f"Товар {i+1}"
-        price = p.get('Цена') or p.get('col2') or '—'
+        name = p.get('Название (RU)') or p.get('col2') or f"Товар {i+1}"
+        price = p.get('Продажная цена') or p.get('col6') or '—'
         markup.add(types.InlineKeyboardButton(f"{name} — {price} сом", callback_data=f"product_{i}"))
     
     bot.edit_message_text(
@@ -165,8 +164,8 @@ def order_from_catalog(call):
     products = get_products()
     idx = int(call.data.split("_")[1])
     p = products[idx]
-    name = p.get('Название') or p.get('col0') or f"Товар {idx+1}"
-    price = p.get('Цена') or p.get('col2') or 0
+    name = p.get('Название (RU)') or p.get('col2') or f"Товар {idx+1}"
+    price = p.get('Продажная цена') or p.get('col6') or 0
     
     user_data[call.message.chat.id] = {
         'source': 'client',
