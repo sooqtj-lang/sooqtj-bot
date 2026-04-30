@@ -231,25 +231,30 @@ def get_price(message):
     save_order(message, price)
 
 def save_order(message, price):
+    from datetime import datetime as dt
     data = user_data[message.chat.id]
     data['price'] = price
-    data['date'] = datetime.now().strftime('%d.%m.%Y')
-    data['time'] = datetime.now().strftime('%H:%M')
-    data['status'] = '⏳ Новый'
+    data['date'] = dt.now().strftime('%d.%m.%Y')
+    data['time'] = dt.now().strftime('%H:%M')
+    data['status'] = '⏳ В ожидании'
     data['chat_id'] = message.chat.id
+    data['order_time'] = dt.now().timestamp()  # для таймера отмены
     orders.append(data)
     
-    # Сохраняем в Sheets (пока логируем)
     save_order_to_sheets(data)
     
-    # Уведомление админу с кнопками статуса
-    markup = types.InlineKeyboardMarkup()
     order_idx = len(orders) - 1
-    markup.row(
-        types.InlineKeyboardButton("🚚 В пути", callback_data=f"status_{order_idx}_transit"),
-        types.InlineKeyboardButton("✅ Доставлен", callback_data=f"status_{order_idx}_delivered")
+    
+    # Кнопки статуса — только админу
+    admin_markup = types.InlineKeyboardMarkup()
+    admin_markup.row(
+        types.InlineKeyboardButton("⏳ В ожидании", callback_data=f"status_{order_idx}_waiting"),
+        types.InlineKeyboardButton("🚚 В пути",     callback_data=f"status_{order_idx}_transit")
     )
-    markup.add(types.InlineKeyboardButton("❌ Отменить", callback_data=f"status_{order_idx}_cancelled"))
+    admin_markup.row(
+        types.InlineKeyboardButton("✅ Доставлено",  callback_data=f"status_{order_idx}_delivered"),
+        types.InlineKeyboardButton("↩️ Возврат",    callback_data=f"status_{order_idx}_returned")
+    )
     
     bot.send_message(
         ADMIN_ID,
@@ -260,7 +265,7 @@ def save_order(message, price):
         f"📍 Адрес: {data['address']}\n"
         f"💰 Сумма: {data['price']} сомони\n"
         f"🕐 Время: {data['time']}",
-        reply_markup=markup,
+        reply_markup=admin_markup,
         parse_mode="Markdown"
     )
     
@@ -268,15 +273,148 @@ def save_order(message, price):
         bot.send_message(message.chat.id, "✅ Заказ добавлен!")
         admin_panel(message)
     else:
+        # Клиенту — кнопки отмены и срочной доставки
+        client_markup = types.InlineKeyboardMarkup()
+        client_markup.add(
+            types.InlineKeyboardButton("🚀 Быстрая доставка (+30 сом)", callback_data=f"express_{order_idx}")
+        )
+        client_markup.add(
+            types.InlineKeyboardButton("❌ Отменить заказ", callback_data=f"cancel_{order_idx}")
+        )
+        
         bot.send_message(
             message.chat.id,
-            "✅ *Заказ принят!*\n\n"
-            "Мы свяжемся с вами в течение 30 минут.\n"
-            "Спасибо за покупку! 🙏",
+            f"🎉 *Спасибо за покупку в SOOQ.TJ!*\n\n"
+            f"Ваш заказ принят и будет доставлен в течение 24 часов.\n"
+            f"Ожидайте звонка от нашего доставщика! 📦\n\n"
+            f"_Отменить заказ можно в течение 1 часа_",
+            reply_markup=client_markup,
             parse_mode="Markdown"
         )
 
-# ==================== СТАТУСЫ ДОСТАВКИ ====================
+# ==================== КНОПКИ КЛИЕНТА ====================
+@bot.callback_query_handler(func=lambda c: c.data.startswith("cancel_"))
+def cancel_order(call):
+    from datetime import datetime as dt
+    order_idx = int(call.data.split("_")[1])
+    
+    if order_idx >= len(orders):
+        bot.answer_callback_query(call.id, "Заказ не найден")
+        return
+    
+    order = orders[order_idx]
+    
+    # Проверяем что это заказ этого клиента
+    if order.get('chat_id') != call.message.chat.id:
+        bot.answer_callback_query(call.id, "❌ Нет доступа")
+        return
+    
+    # Проверяем 1 час
+    order_time = order.get('order_time', 0)
+    elapsed = dt.now().timestamp() - order_time
+    if elapsed > 3600:
+        bot.answer_callback_query(call.id, "⏰ Время отмены истекло (1 час)")
+        # Убираем кнопку отмены
+        try:
+            new_markup = types.InlineKeyboardMarkup()
+            new_markup.add(types.InlineKeyboardButton("🚀 Быстрая доставка (+30 сом)", callback_data=f"express_{order_idx}"))
+            bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=new_markup)
+        except:
+            pass
+        return
+    
+    # Отменяем заказ
+    orders[order_idx]['status'] = '❌ Отменён'
+    
+    # Уведомляем админа
+    try:
+        bot.send_message(
+            ADMIN_ID,
+            f"❌ *Заказ #{order_idx + 1} отменён клиентом!*\n\n"
+            f"👤 {order.get('name', '—')}\n"
+            f"📦 {order.get('product', '—')}\n"
+            f"📱 {order.get('phone', '—')}",
+            parse_mode="Markdown"
+        )
+    except:
+        pass
+    
+    bot.answer_callback_query(call.id, "Заказ отменён")
+    bot.edit_message_text(
+        "❌ *Заказ успешно отменён.*\n\nЕсли передумаете — мы всегда здесь! 😊",
+        call.message.chat.id,
+        call.message.message_id,
+        parse_mode="Markdown"
+    )
+
+@bot.callback_query_handler(func=lambda c: c.data.startswith("express_"))
+def express_delivery(call):
+    order_idx = int(call.data.split("_")[1])
+    
+    if order_idx >= len(orders):
+        bot.answer_callback_query(call.id, "Заказ не найден")
+        return
+    
+    order = orders[order_idx]
+    
+    # Проверяем что это заказ этого клиента
+    if order.get('chat_id') != call.message.chat.id:
+        bot.answer_callback_query(call.id, "❌ Нет доступа")
+        return
+    
+    if orders[order_idx].get('express'):
+        bot.answer_callback_query(call.id, "✅ Быстрая доставка уже активна")
+        return
+    
+    # Добавляем +30 сомони и ставим флаг
+    orders[order_idx]['price'] = int(orders[order_idx].get('price', 0)) + 30
+    orders[order_idx]['express'] = True
+    orders[order_idx]['status'] = '🚀 Срочный'
+    
+    # Уведомляем админа и доставщиков
+    express_text = (
+        f"🚀 *СРОЧНЫЙ ЗАКАЗ #{order_idx + 1}!*\n\n"
+        f"Клиент выбрал быструю доставку!\n\n"
+        f"👤 {order.get('name', '—')}\n"
+        f"📱 {order.get('phone', '—')}\n"
+        f"📦 {order.get('product', '—')}\n"
+        f"📍 {order.get('address', '—')}\n"
+        f"💰 Сумма: {orders[order_idx]['price']} сомони (+30 срочная)"
+    )
+    
+    try:
+        bot.send_message(ADMIN_ID, express_text, parse_mode="Markdown")
+    except:
+        pass
+    
+    # Уведомляем всех доставщиков
+    for driver_id in drivers:
+        try:
+            bot.send_message(driver_id, express_text, parse_mode="Markdown")
+        except:
+            pass
+    
+    bot.answer_callback_query(call.id, "🚀 Быстрая доставка активирована!")
+    
+    # Убираем кнопку срочной доставки
+    try:
+        new_markup = types.InlineKeyboardMarkup()
+        new_markup.add(types.InlineKeyboardButton("❌ Отменить заказ", callback_data=f"cancel_{order_idx}"))
+        bot.edit_message_text(
+            f"🎉 *Спасибо за покупку в SOOQ.TJ!*\n\n"
+            f"Ваш заказ принят и будет доставлен в течение 24 часов.\n"
+            f"Ожидайте звонка от нашего доставщика! 📦\n\n"
+            f"🚀 *Быстрая доставка активирована!*\n"
+            f"_Отменить заказ можно в течение 1 часа_",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=new_markup,
+            parse_mode="Markdown"
+        )
+    except:
+        pass
+
+# ==================== СТАТУСЫ ДОСТАВКИ (АДМИН) ====================
 @bot.callback_query_handler(func=lambda c: c.data.startswith("status_"))
 def update_status(call):
     if call.message.chat.id != ADMIN_ID:
@@ -288,30 +426,49 @@ def update_status(call):
     new_status = parts[2]
     
     status_map = {
-        'transit': '🚚 В пути',
-        'delivered': '✅ Доставлен',
-        'cancelled': '❌ Отменён'
+        'waiting':   '⏳ В ожидании',
+        'transit':   '🚚 В пути',
+        'delivered': '✅ Доставлено',
+        'returned':  '↩️ Возврат'
     }
     
-    if order_idx < len(orders):
-        orders[order_idx]['status'] = status_map.get(new_status, 'Неизвестно')
-        
-        # Уведомляем клиента
-        client_id = orders[order_idx].get('chat_id')
-        if client_id and client_id != ADMIN_ID:
-            try:
-                bot.send_message(
-                    client_id,
-                    f"📦 *Обновление заказа*\n\n"
-                    f"Товар: {orders[order_idx]['product']}\n"
-                    f"Статус: {status_map.get(new_status, '—')}",
-                    parse_mode="Markdown"
-                )
-            except:
-                pass
-        
-        bot.answer_callback_query(call.id, f"Статус обновлён: {status_map.get(new_status)}")
-        bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+    if order_idx >= len(orders):
+        bot.answer_callback_query(call.id, "Заказ не найден")
+        return
+    
+    orders[order_idx]['status'] = status_map.get(new_status, '—')
+    status_text = status_map.get(new_status, '—')
+    
+    # Уведомляем клиента
+    client_id = orders[order_idx].get('chat_id')
+    if client_id and client_id != ADMIN_ID:
+        try:
+            bot.send_message(
+                client_id,
+                f"📦 *Обновление вашего заказа*\n\n"
+                f"Товар: {orders[order_idx]['product']}\n"
+                f"Статус: {status_text}",
+                parse_mode="Markdown"
+            )
+        except:
+            pass
+    
+    bot.answer_callback_query(call.id, f"✅ {status_text}")
+    
+    # Обновляем кнопки
+    markup = types.InlineKeyboardMarkup()
+    markup.row(
+        types.InlineKeyboardButton("⏳ В ожидании", callback_data=f"status_{order_idx}_waiting"),
+        types.InlineKeyboardButton("🚚 В пути",     callback_data=f"status_{order_idx}_transit")
+    )
+    markup.row(
+        types.InlineKeyboardButton("✅ Доставлено",  callback_data=f"status_{order_idx}_delivered"),
+        types.InlineKeyboardButton("↩️ Возврат",    callback_data=f"status_{order_idx}_returned")
+    )
+    try:
+        bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=markup)
+    except:
+        pass
 
 # ==================== АДМИН ПАНЕЛЬ ====================
 @bot.message_handler(commands=['admin'])
