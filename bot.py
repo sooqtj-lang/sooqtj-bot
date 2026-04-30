@@ -8,7 +8,7 @@ import requests
 
 # ==================== КОНФИГ ====================
 TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = 8442941172
+ADMIN_ID = 8329284632
 SHEETS_ID = "1RoLKPZQY675Bv16GoMZDW7Sv_s77s0lKu-s2mVj3qA8"
 DRIVER_PASSWORD = os.getenv("DRIVER_PASSWORD", "1234")  # пароль меняй в Railway Variables
 
