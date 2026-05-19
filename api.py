@@ -56,11 +56,17 @@ async def webhook(update: dict):
     return {"ok": True}
 
 
-# ─── ME ─────────────────────────────────────────────────────
+# ─── ME + ROLE ──────────────────────────────────────────────
 
 @app.get("/api/me")
 def me(user=Depends(get_current_user)):
     return user
+
+@app.get("/api/role")
+def get_role_endpoint(user_id: int):
+    role = auth.get_role(user_id)
+    print(f"[role] user_id={user_id} → {role}")
+    return {"role": role, "user_id": user_id}
 
 
 # ─── PRODUCTS ───────────────────────────────────────────────
