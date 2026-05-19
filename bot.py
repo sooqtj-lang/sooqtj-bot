@@ -21,10 +21,11 @@ def is_admin(message):
     return message.chat.id == ADMIN_ID
 
 
-def make_markup(label):
+def make_markup(label, uid=None):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     if WEBAPP_URL:
-        markup.add(types.KeyboardButton(label, web_app=types.WebAppInfo(url=WEBAPP_URL)))
+        url = f"{WEBAPP_URL}?uid={uid}" if uid else WEBAPP_URL
+        markup.add(types.KeyboardButton(label, web_app=types.WebAppInfo(url=url)))
     return markup
 
 
@@ -60,17 +61,18 @@ def _save_driver_to_railway(user_id: int):
 
 @bot.message_handler(commands=["start"])
 def start(message):
+    uid = message.chat.id
     if is_admin(message):
         bot.send_message(
             message.chat.id,
             "👑 Добро пожаловать, администратор!",
-            reply_markup=make_markup("📊 Открыть панель управления"),
+            reply_markup=make_markup("📊 Открыть панель управления", uid),
         )
     else:
         bot.send_message(
             message.chat.id,
             "Салом! 👋 Хуш омадед ба SOOQ.TJ!\n\nЭлектроника и бытовая техника из Китая 🇨🇳",
-            reply_markup=make_markup("🛍 Открыть магазин SOOQ"),
+            reply_markup=make_markup("🛍 Открыть магазин SOOQ", uid),
         )
 
 
@@ -91,7 +93,7 @@ def driver_activate(message):
         bot.send_message(
             message.chat.id,
             "✅ Вы активированы как водитель!\n\nНажмите кнопку для просмотра доставок:",
-            reply_markup=make_markup("🚚 Мои доставки"),
+            reply_markup=make_markup("🚚 Мои доставки", message.chat.id),
         )
     else:
         bot.send_message(message.chat.id, "❌ Неверный код.\n\nПопробуйте ещё раз: /driver")

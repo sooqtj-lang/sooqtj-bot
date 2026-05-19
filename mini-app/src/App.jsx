@@ -15,9 +15,20 @@ export default function App() {
     ready()
     expand()
     setInitData(initData)
-    setUserId(user.id)
 
-    const userId = user.id || 0
+    // uid from URL (?uid=...) is most reliable — set by bot
+    const params = new URLSearchParams(window.location.search)
+    const urlUid = parseInt(params.get('uid') || '0')
+    const tgUid = user?.id || 0
+    const userId = urlUid || tgUid
+
+    setUserId(userId)
+
+    if (!userId) {
+      setRole('client')
+      return
+    }
+
     fetch(`${BASE}/api/role?user_id=${userId}`)
       .then(r => r.json())
       .then(d => setRole(d.role || 'client'))
