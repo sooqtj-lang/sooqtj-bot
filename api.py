@@ -196,4 +196,8 @@ if dist.exists():
 
     @app.get("/{full_path:path}")
     def serve_spa(full_path: str):
-        return FileResponse(dist / "index.html")
+        resp = FileResponse(dist / "index.html")
+        resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
+        return resp
