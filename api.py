@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-import telebot
+import bot as bot_module
 
 import sheets
 import auth
@@ -22,7 +22,7 @@ app.add_middleware(
 )
 
 ADMIN_ID = int(os.getenv("ADMIN_ID", "7555325054"))
-bot = telebot.TeleBot(os.getenv("BOT_TOKEN", ""))
+bot = bot_module.bot  # reuse bot instance that has all handlers registered
 
 # ─── AUTH ───────────────────────────────────────────────────
 
