@@ -27,10 +27,10 @@ bot = bot_module.bot  # reuse bot instance that has all handlers registered
 
 # ─── AUTH ───────────────────────────────────────────────────
 
-def get_current_user(x_init_data: str = Header(...)):
-    user = auth.validate_init_data(x_init_data)
+def get_current_user(x_init_data: str = Header(default=""), x_user_id: str = Header(default="")):
+    user = auth.validate_init_data(x_init_data, x_user_id)
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid initData")
+        raise HTTPException(status_code=401, detail="Unauthorized")
     user["role"] = auth.get_role(user["id"])
     return user
 

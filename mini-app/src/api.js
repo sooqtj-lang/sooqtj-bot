@@ -1,12 +1,19 @@
 const BASE = import.meta.env.VITE_API_URL || ''
 let _initData = ''
+let _userId = ''
 
 export function setInitData(v) { _initData = v }
+export function setUserId(v) { _userId = String(v) }
 
 async function req(path, opts = {}) {
   const res = await fetch(`${BASE}${path}`, {
     ...opts,
-    headers: { 'Content-Type': 'application/json', 'x-init-data': _initData, ...opts.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-init-data': _initData,
+      'x-user-id': _userId,
+      ...opts.headers,
+    },
   })
   if (!res.ok) throw new Error(await res.text())
   return res.json()
@@ -21,14 +28,18 @@ export const api = {
     const form = new FormData()
     form.append('file', file)
     return fetch(`${BASE}/api/upload-photo`, {
-      method: 'POST', headers: { 'x-init-data': _initData }, body: form,
+      method: 'POST',
+      headers: { 'x-init-data': _initData, 'x-user-id': _userId },
+      body: form,
     }).then(r => r.json())
   },
   uploadLogo:      (file)       => {
     const form = new FormData()
     form.append('file', file)
     return fetch(`${BASE}/api/upload-logo`, {
-      method: 'POST', headers: { 'x-init-data': _initData }, body: form,
+      method: 'POST',
+      headers: { 'x-init-data': _initData, 'x-user-id': _userId },
+      body: form,
     }).then(r => r.json())
   },
   createOrder:     (d)          => req('/api/orders', { method: 'POST', body: JSON.stringify(d) }),

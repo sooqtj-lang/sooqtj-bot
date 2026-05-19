@@ -15,29 +15,37 @@ def _get_driver_ids():
     )
 
 
-def validate_init_data(init_data: str):
-    """Parse Telegram WebApp initData and return user dict."""
-    if not init_data:
-        return None
-    try:
-        parsed = dict(parse_qsl(init_data, keep_blank_values=True))
-        user_raw = parsed.get("user", "")
-        if not user_raw:
-            return None
-        user_data = json.loads(unquote(user_raw))
-        uid = user_data.get("id")
-        print(f"[auth] user_id={uid} admin_id={_get_admin_id()}")
-        return user_data if uid else None
-    except Exception as e:
-        print(f"[auth] error: {e}")
-        return None
+def validate_init_data(init_data: str, user_id_fallback: str = ""):
+    """Parse Telegram initData, fallback to x-user-id header."""
+    # Try initData first
+    if init_data:
+        try:
+            parsed = dict(parse_qsl(init_data, keep_blank_values=True))
+            user_raw = parsed.get("user", "")
+            if user_raw:
+                user_data = json.loads(unquote(user_raw))
+                if user_data.get("id"):
+                    print(f"[auth] initData ok, user_id={user_data['id']}")
+                    return user_data
+        except Exception as e:
+            print(f"[auth] initData parse error: {e}")
+
+    # Fallback: trust x-user-id from initDataUnsafe (client-side)
+    if user_id_fallback:
+        try:
+            uid = int(user_id_fallback)
+            if uid > 0:
+                print(f"[auth] fallback user_id={uid}")
+                return {"id": uid}
+        except Exception:
+            pass
+
+    print(f"[auth] no valid user, init_data={bool(init_data)}, fallback={user_id_fallback!r}")
+    return None
 
 
 def get_role(user_id: int) -> str:
     admin_id = _get_admin_id()
-    print(f"[auth] get_role: user_id={user_id} ({type(user_id)}) admin_id={admin_id} ({type(admin_id)}) match={user_id == admin_id}")
-    if user_id == admin_id:
-        return "admin"
-    if user_id in _get_driver_ids():
-        return "driver"
-    return "client"
+    role = "admin" if user_id == admin_id else ("driver" if user_id in _get_driver_ids() else "client")
+    print(f"[auth] get_role user_id={user_id} admin_id={admin_id} → {role}")
+    return role

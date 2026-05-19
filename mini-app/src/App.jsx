@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTelegram } from './useTelegram'
-import { api, setInitData } from './api'
+import { api, setInitData, setUserId } from './api'
 import ClientPage from './pages/ClientPage'
 import AdminPage from './pages/AdminPage'
 import DriverPage from './pages/DriverPage'
@@ -13,6 +13,7 @@ export default function App() {
     ready()
     expand()
     setInitData(initData)
+    setUserId(user.id)
     api.getMe()
       .then(u => setRole(u.role))
       .catch(() => setRole('client'))
