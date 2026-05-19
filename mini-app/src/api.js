@@ -1,0 +1,33 @@
+const BASE = import.meta.env.VITE_API_URL || ''
+let _initData = ''
+
+export function setInitData(v) { _initData = v }
+
+async function req(path, opts = {}) {
+  const res = await fetch(`${BASE}${path}`, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', 'x-init-data': _initData, ...opts.headers },
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return res.json()
+}
+
+export const api = {
+  getMe:           ()           => req('/api/me'),
+  getProducts:     ()           => req('/api/products'),
+  addProduct:      (d)          => req('/api/products', { method: 'POST', body: JSON.stringify(d) }),
+  updateProduct:   (id, d)      => req(`/api/products/${id}`, { method: 'PUT', body: JSON.stringify(d) }),
+  uploadPhoto:     (file)       => {
+    const form = new FormData()
+    form.append('file', file)
+    return fetch(`${BASE}/api/upload-photo`, {
+      method: 'POST', headers: { 'x-init-data': _initData }, body: form,
+    }).then(r => r.json())
+  },
+  createOrder:     (d)          => req('/api/orders', { method: 'POST', body: JSON.stringify(d) }),
+  getMyOrders:     ()           => req('/api/orders/my'),
+  getAllOrders:     ()           => req('/api/orders'),
+  getDeliveries:   ()           => req('/api/deliveries'),
+  updateOrder:     (id, status) => req(`/api/orders/${id}`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  getStats:        ()           => req('/api/stats'),
+}
