@@ -20,7 +20,7 @@ export default function App() {
 
   if (!role) return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#F5F5F5]">
-      <img src="/logo.png" alt="SOOQ" className="w-24 h-24 animate-pulse mb-3" />
+      <img src="/logo.svg" alt="SOOQ" className="w-24 h-24 animate-pulse mb-3" />
       <p className="font-bold text-xl text-[#1A1A1A]">SOOQ.TJ</p>
       <p className="text-sm text-gray-400 mt-1">Загрузка...</p>
     </div>

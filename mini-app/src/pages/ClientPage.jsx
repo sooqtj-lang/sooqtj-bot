@@ -60,7 +60,7 @@ export default function ClientPage() {
     <div className="flex flex-col min-h-screen bg-[#F5F5F5]">
       {/* Header */}
       <div className="bg-[#FFBE00] px-4 py-3 flex items-center gap-3 shadow">
-        <img src="/logo.png" alt="SOOQ" className="w-10 h-10 rounded-xl" />
+        <img src="/logo.svg" alt="SOOQ" className="w-10 h-10 rounded-xl" />
         <div>
           <p className="font-bold text-[#1A1A1A] text-base leading-none">SOOQ.TJ</p>
           <p className="text-[10px] text-[#1A1A1A]/60 uppercase tracking-widest">Online Shopping</p>
