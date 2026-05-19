@@ -4,7 +4,7 @@ import StatusBadge from '../components/StatusBadge'
 
 const STATUSES = ['В пути', 'Доставлен', 'Возврат']
 
-export default function DriverPage() {
+export default function DriverPage({ onLogout }) {
   const [deliveries, setDeliveries] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -27,7 +27,8 @@ export default function DriverPage() {
           <p className="font-bold text-[#1A1A1A] text-base leading-none">Мои Доставки</p>
           <p className="text-[10px] text-[#1A1A1A]/60 uppercase tracking-widest">SOOQ.TJ</p>
         </div>
-        <button onClick={load} className="ml-auto text-[#1A1A1A]/60 text-xl">↻</button>
+        <button onClick={load} className="ml-auto text-[#1A1A1A]/60 text-xl mr-2">↻</button>
+        <button onClick={onLogout} className="text-xs font-semibold bg-[#1A1A1A] text-white px-3 py-1.5 rounded-full">Выйти</button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-3">

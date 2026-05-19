@@ -49,6 +49,6 @@ export default function App() {
   )
 
   if (role === 'admin')  return <AdminPage />
-  if (role === 'driver') return <DriverPage />
+  if (role === 'driver') return <DriverPage onLogout={() => setRole('client')} />
   return <ClientPage />
 }
