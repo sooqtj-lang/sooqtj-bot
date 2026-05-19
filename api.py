@@ -107,6 +107,16 @@ async def upload_photo(file: UploadFile = File(...), user=Depends(require_admin)
     return {"url": f"{webapp_url}/uploads/{safe_name}"}
 
 
+@app.post("/api/upload-logo")
+async def upload_logo(file: UploadFile = File(...), user=Depends(require_admin)):
+    upload_dir = Path("uploads")
+    upload_dir.mkdir(exist_ok=True)
+    content = await file.read()
+    path = upload_dir / "logo.png"
+    path.write_bytes(content)
+    return {"url": "/uploads/logo.png"}
+
+
 # ─── ORDERS ─────────────────────────────────────────────────
 
 class OrderIn(BaseModel):

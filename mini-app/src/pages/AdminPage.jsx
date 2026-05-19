@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { api } from '../api'
 import OrderCard from '../components/OrderCard'
 import ProductForm from '../components/ProductForm'
 import StatusBadge from '../components/StatusBadge'
 
-const TABS = ['Заказы', 'Статистика', 'Товары']
-
+const TABS = ['Заказы', 'Статистика', 'Товары', 'Настройки']
 const STATUSES = ['Новый', 'Подтверждён', 'В пути', 'Доставлен', 'Отменён']
 
 export default function AdminPage() {
@@ -16,9 +15,13 @@ export default function AdminPage() {
   const [showForm, setShowForm] = useState(false)
   const [editProduct, setEditProduct] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [logoUrl, setLogoUrl] = useState('/uploads/logo.png')
+  const [logoUploading, setLogoUploading] = useState(false)
+  const [logoOk, setLogoOk] = useState(false)
+  const logoInputRef = useRef()
 
-  const loadOrders = () => api.getAllOrders().then(setOrders)
-  const loadStats  = () => api.getStats().then(setStats)
+  const loadOrders   = () => api.getAllOrders().then(setOrders)
+  const loadStats    = () => api.getStats().then(setStats)
   const loadProducts = () => api.getProducts().then(setProducts)
 
   useEffect(() => {
@@ -41,11 +44,34 @@ export default function AdminPage() {
     loadProducts()
   }
 
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setLogoUploading(true)
+    setLogoOk(false)
+    try {
+      const res = await api.uploadLogo(file)
+      setLogoUrl(res.url + '?t=' + Date.now())
+      setLogoOk(true)
+    } finally {
+      setLogoUploading(false)
+    }
+  }
+
+  const Logo = ({ cls }) => (
+    <img
+      src={logoUrl}
+      alt="SOOQ"
+      className={cls}
+      onError={e => { e.target.src = '/logo.svg' }}
+    />
+  )
+
   return (
     <div className="flex flex-col min-h-screen bg-[#F5F5F5]">
       {/* Header */}
       <div className="bg-[#FFBE00] px-4 py-3 flex items-center gap-3 shadow">
-        <img src="/logo.svg" alt="SOOQ" className="w-10 h-10 rounded-xl" />
+        <Logo cls="w-10 h-10 rounded-xl object-cover" />
         <div>
           <p className="font-bold text-[#1A1A1A] text-base leading-none">Панель Админа</p>
           <p className="text-[10px] text-[#1A1A1A]/60 uppercase tracking-widest">SOOQ.TJ</p>
@@ -53,10 +79,10 @@ export default function AdminPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-white border-b border-gray-100">
+      <div className="flex bg-white border-b border-gray-100 overflow-x-auto">
         {TABS.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
-            className={`flex-1 py-2.5 text-xs font-semibold transition-all
+            className={`flex-1 py-2.5 text-xs font-semibold whitespace-nowrap px-2 transition-all
               ${tab === i ? 'text-[#1A1A1A] border-b-2 border-[#FFBE00]' : 'text-gray-400'}`}>
             {t}
           </button>
@@ -102,11 +128,11 @@ export default function AdminPage() {
           stats ? (
             <div className="grid grid-cols-2 gap-3 mt-1">
               {[
-                { label: 'Сегодня заказов', value: stats.today_count },
-                { label: 'Выручка сегодня', value: `${stats.today_sum} сом` },
-                { label: 'За месяц заказов', value: stats.month_count },
-                { label: 'Выручка за месяц', value: `${stats.month_sum} сом` },
-                { label: 'Всего заказов', value: stats.total_count, wide: true },
+                { label: 'Сегодня заказов',   value: stats.today_count },
+                { label: 'Выручка сегодня',   value: `${stats.today_sum} сом` },
+                { label: 'За месяц заказов',  value: stats.month_count },
+                { label: 'Выручка за месяц',  value: `${stats.month_sum} сом` },
+                { label: 'Всего заказов',      value: stats.total_count, wide: true },
               ].map((s, i) => (
                 <div key={i} className={`bg-white rounded-2xl p-4 shadow-sm ${s.wide ? 'col-span-2' : ''}`}>
                   <p className="text-xs text-gray-400 mb-1">{s.label}</p>
@@ -153,6 +179,48 @@ export default function AdminPage() {
             ))}
           </div>
         )}
+
+        {/* НАСТРОЙКИ */}
+        {tab === 3 && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <p className="font-bold text-sm text-[#1A1A1A] mb-3">Логотип магазина</p>
+
+              <div className="flex items-center gap-4 mb-4">
+                <img
+                  src={logoUrl}
+                  alt="Логотип"
+                  className="w-20 h-20 rounded-2xl object-cover border-2 border-[#FFBE00]"
+                  onError={e => { e.target.src = '/logo.svg' }}
+                />
+                <div>
+                  <p className="text-xs text-gray-400 mb-2">Текущий логотип</p>
+                  {logoOk && (
+                    <p className="text-xs text-green-500 font-semibold">✅ Загружен!</p>
+                  )}
+                </div>
+              </div>
+
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleLogoUpload}
+              />
+              <button
+                onClick={() => logoInputRef.current.click()}
+                disabled={logoUploading}
+                className="w-full bg-[#FFBE00] text-[#1A1A1A] font-bold rounded-xl py-3 text-sm active:scale-95 transition-transform disabled:opacity-60">
+                {logoUploading ? 'Загружаем...' : '📷 Загрузить логотип'}
+              </button>
+              <p className="text-[10px] text-gray-400 mt-2 text-center">
+                PNG / JPG / SVG · рекомендуется квадратный
+              </p>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   )

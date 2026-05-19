@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { api } from '../api'
 import { useTelegram } from '../useTelegram'
 import ProductCard from '../components/ProductCard'
 import OrderCard from '../components/OrderCard'
 
 const TABS = ['Каталог', 'Корзина', 'Мои заказы']
+const LOGO_SRC = '/uploads/logo.png'
 
 export default function ClientPage() {
   const { user } = useTelegram()
@@ -16,6 +17,8 @@ export default function ClientPage() {
   const [form, setForm] = useState({ name: '', phone: '', address: '' })
   const [placing, setPlacing] = useState(false)
   const [success, setSuccess] = useState(false)
+
+  const touchStartX = useRef(null)
 
   useEffect(() => {
     api.getProducts().then(setProducts).finally(() => setLoading(false))
@@ -56,11 +59,30 @@ export default function ClientPage() {
     setTimeout(() => { setSuccess(false); setTab(2) }, 2000)
   }
 
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX
+  }
+
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current === null) return
+    const diff = touchStartX.current - e.changedTouches[0].clientX
+    if (Math.abs(diff) > 60) {
+      if (diff > 0) setTab(t => Math.min(t + 1, TABS.length - 1))
+      else setTab(t => Math.max(t - 1, 0))
+    }
+    touchStartX.current = null
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-[#F5F5F5]">
       {/* Header */}
       <div className="bg-[#FFBE00] px-4 py-3 flex items-center gap-3 shadow">
-        <img src="/logo.svg" alt="SOOQ" className="w-10 h-10 rounded-xl" />
+        <img
+          src={LOGO_SRC}
+          alt="SOOQ"
+          className="w-10 h-10 rounded-xl object-cover"
+          onError={e => { e.target.src = '/logo.svg' }}
+        />
         <div>
           <p className="font-bold text-[#1A1A1A] text-base leading-none">SOOQ.TJ</p>
           <p className="text-[10px] text-[#1A1A1A]/60 uppercase tracking-widest">Online Shopping</p>
@@ -84,7 +106,12 @@ export default function ClientPage() {
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3">
+      {/* Swipeable content */}
+      <div
+        className="flex-1 overflow-y-auto p-3"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {/* КАТАЛОГ */}
         {tab === 0 && (
           loading ? (
@@ -107,6 +134,7 @@ export default function ClientPage() {
               <div className="text-center py-16 text-gray-400">
                 <p className="text-4xl mb-3">🛒</p>
                 <p>Корзина пуста</p>
+                <p className="text-xs mt-2 text-gray-300">← свайп влево чтобы вернуться</p>
               </div>
             ) : (
               <>
@@ -142,7 +170,7 @@ export default function ClientPage() {
                     </div>
                   ) : (
                     <button onClick={placeOrder} disabled={placing}
-                      className="w-full bg-[#1A1A1A] text-white font-bold rounded-xl py-3 text-sm active:scale-95 transition-transform">
+                      className="w-full bg-[#1A1A1A] text-white font-bold rounded-xl py-3 text-sm active:scale-95 transition-transform disabled:opacity-60">
                       {placing ? 'Оформляем...' : '📦 Оформить заказ'}
                     </button>
                   )}
@@ -165,6 +193,15 @@ export default function ClientPage() {
             )}
           </div>
         )}
+      </div>
+
+      {/* Swipe hint dots */}
+      <div className="flex justify-center gap-1.5 py-2 bg-white border-t border-gray-100">
+        {TABS.map((_, i) => (
+          <div key={i}
+            className={`rounded-full transition-all ${tab === i ? 'w-4 h-1.5 bg-[#FFBE00]' : 'w-1.5 h-1.5 bg-gray-200'}`}
+          />
+        ))}
       </div>
     </div>
   )

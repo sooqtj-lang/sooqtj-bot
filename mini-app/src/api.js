@@ -24,6 +24,13 @@ export const api = {
       method: 'POST', headers: { 'x-init-data': _initData }, body: form,
     }).then(r => r.json())
   },
+  uploadLogo:      (file)       => {
+    const form = new FormData()
+    form.append('file', file)
+    return fetch(`${BASE}/api/upload-logo`, {
+      method: 'POST', headers: { 'x-init-data': _initData }, body: form,
+    }).then(r => r.json())
+  },
   createOrder:     (d)          => req('/api/orders', { method: 'POST', body: JSON.stringify(d) }),
   getMyOrders:     ()           => req('/api/orders/my'),
   getAllOrders:     ()           => req('/api/orders'),
