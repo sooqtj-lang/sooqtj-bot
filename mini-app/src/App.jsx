@@ -7,7 +7,6 @@ import DriverPage from './pages/DriverPage'
 
 const BASE = import.meta.env.VITE_API_URL || ''
 
-// ─── Error Boundary ──────────────────────────────────────────
 class ErrorBoundary extends Component {
   state = { error: null }
   static getDerivedStateFromError(e) { return { error: e } }
@@ -15,7 +14,7 @@ class ErrorBoundary extends Component {
     if (this.state.error) return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#F5F5F5] p-6">
         <p className="text-4xl mb-3">⚠️</p>
-        <p className="font-bold text-[#1A1A1A] text-lg mb-2">Что-то пошло не так</p>
+        <p className="font-bold text-[#1A1A1A] mb-2">Ошибка рендера</p>
         <p className="text-xs text-gray-400 text-center mb-4">{String(this.state.error)}</p>
         <button onClick={() => window.location.reload()}
           className="bg-[#FFBE00] text-[#1A1A1A] font-bold px-6 py-2.5 rounded-full text-sm">
@@ -27,72 +26,105 @@ class ErrorBoundary extends Component {
   }
 }
 
-// ─── UID detection ────────────────────────────────────────────
-// Приоритет: URL ?uid= > localStorage > Telegram initDataUnsafe
-function getUid(user) {
-  // 1. ?uid= из URL — приходит когда пользователь нажимает кнопку в боте
-  const params = new URLSearchParams(window.location.search)
+function collectDebug(user) {
+  const search = window.location.search
+  const params = new URLSearchParams(search)
   const urlUid = parseInt(params.get('uid') || '0')
-  if (urlUid > 0) {
-    // Запоминаем в localStorage чтобы следующее открытие тоже работало
-    try { localStorage.setItem('sooq_uid', String(urlUid)) } catch (_) {}
-    return urlUid
-  }
 
-  // 2. Telegram initDataUnsafe.user.id
+  // initDataUnsafe
   const tgUid = user?.id || 0
-  if (tgUid > 0) {
-    try { localStorage.setItem('sooq_uid', String(tgUid)) } catch (_) {}
-    return tgUid
-  }
 
-  // 3. Запомненный из прошлой сессии (когда Telegram открывает без ?uid=)
+  // Parse initData manually
+  let initUid = 0
   try {
-    const stored = parseInt(localStorage.getItem('sooq_uid') || '0')
-    if (stored > 0) return stored
+    const raw = window.Telegram?.WebApp?.initData || ''
+    if (raw) {
+      const p = new URLSearchParams(raw)
+      const u = JSON.parse(p.get('user') || '{}')
+      initUid = u?.id || 0
+    }
   } catch (_) {}
 
-  return 0
+  // localStorage
+  let storedUid = 0
+  try { storedUid = parseInt(localStorage.getItem('sooq_uid') || '0') } catch (_) {}
+
+  const uid = urlUid || tgUid || initUid || storedUid
+
+  // Save best uid
+  if (uid > 0) {
+    try { localStorage.setItem('sooq_uid', String(uid)) } catch (_) {}
+  }
+
+  return { uid, urlUid, tgUid, initUid, storedUid, search }
 }
 
-// ─── Main App ─────────────────────────────────────────────────
 function AppInner() {
   const { ready, expand, initData, user } = useTelegram()
   const [role, setRole] = useState(null)
-  const [detectedUid, setDetectedUid] = useState(0)
+  const [debug, setDebug] = useState(null)
+  const [apiError, setApiError] = useState('')
+
+  const checkRole = (uid) => {
+    setApiError('')
+    return fetch(`${BASE}/api/role?user_id=${uid}`)
+      .then(r => r.json())
+      .then(d => { setRole(d.role || 'client') })
+      .catch(e => { setApiError(String(e)); setRole('client') })
+  }
 
   useEffect(() => {
     ready()
     expand()
     setInitData(initData)
 
-    const userId = getUid(user)
-    setDetectedUid(userId)
-    setUserId(userId)
+    const d = collectDebug(user)
+    setDebug(d)
+    setUserId(d.uid)
 
-    if (!userId) {
-      setRole('client')
+    if (!d.uid) {
+      setRole('noid')   // special: no id detected at all
       return
     }
-
-    fetch(`${BASE}/api/role?user_id=${userId}`)
-      .then(r => r.json())
-      .then(d => setRole(d.role || 'client'))
-      .catch(() => setRole('client'))
+    checkRole(d.uid)
   }, [])
 
+  // No ID at all — show clear instructions
+  if (role === 'noid') return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-[#F5F5F5] p-6">
+      <p className="text-4xl mb-3">🔑</p>
+      <p className="font-bold text-[#1A1A1A] text-lg mb-2">Нет доступа</p>
+      <p className="text-sm text-gray-500 text-center mb-4">
+        Не удалось определить ваш Telegram ID.<br />
+        Закройте это окно и нажмите <b>/start</b> боту.
+      </p>
+      {debug && (
+        <div className="bg-white rounded-xl p-3 w-full text-[10px] text-gray-400 space-y-0.5 font-mono">
+          <p>url uid: {debug.urlUid}</p>
+          <p>tg uid: {debug.tgUid}</p>
+          <p>init uid: {debug.initUid}</p>
+          <p>stored uid: {debug.storedUid}</p>
+          <p>search: {debug.search || '(empty)'}</p>
+          {apiError && <p className="text-red-400">err: {apiError}</p>}
+        </div>
+      )}
+      <button onClick={() => window.location.reload()}
+        className="mt-4 bg-[#FFBE00] text-[#1A1A1A] font-bold px-6 py-2.5 rounded-full text-sm">
+        Попробовать ещё раз
+      </button>
+    </div>
+  )
+
+  // Loading
   if (!role) return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#F5F5F5]">
-      <img
-        src="/uploads/logo.png"
-        alt="SOOQ"
+      <img src="/uploads/logo.png" alt="SOOQ"
         className="w-24 h-24 animate-pulse mb-3 rounded-2xl object-cover"
-        onError={e => { e.target.src = '/logo.svg' }}
-      />
+        onError={e => { e.target.src = '/logo.svg' }} />
       <p className="font-bold text-xl text-[#1A1A1A]">SOOQ.TJ</p>
       <p className="text-sm text-gray-400 mt-1">Загрузка...</p>
-      {detectedUid > 0 && (
-        <p className="text-[10px] text-gray-300 mt-1">uid: {detectedUid}</p>
+      {debug && debug.uid > 0 && (
+        <p className="text-[10px] text-gray-300 mt-1">uid: {debug.uid}</p>
       )}
     </div>
   )
@@ -103,9 +135,5 @@ function AppInner() {
 }
 
 export default function App() {
-  return (
-    <ErrorBoundary>
-      <AppInner />
-    </ErrorBoundary>
-  )
+  return <ErrorBoundary><AppInner /></ErrorBoundary>
 }
