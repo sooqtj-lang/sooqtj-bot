@@ -1,9 +1,9 @@
 export default function ProductCard({ product: p, onAdd }) {
-  const name  = p['Название (RU)'] || p['col2'] || 'Товар'
-  const price = p['Продажная цена'] || p['col6'] || '—'
-  const photo = p['Фото (URL)'] || null
+  const name  = p['Название (RU)'] || p['Название'] || p['col2'] || 'Товар'
+  const price = p['Продажная цена'] || p['Цена'] || p['col6'] || '—'
+  const photo = p['Фото (URL)'] || p['Фото 1'] || p['Фото'] || p['photo_url'] || null
   const cat   = p['Категория'] || p['col3'] || ''
-  const qty   = parseInt(p['В наличии (шт)'] || p['col9'] || '0')
+  const qty   = parseInt(p['В наличии (шт)'] || p['В наличии'] || p['col9'] || '0')
 
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm flex flex-col">

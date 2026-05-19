@@ -5,7 +5,7 @@ export default function ProductForm({ initial, onSave, onCancel }) {
   const [form, setForm] = useState({
     name:      initial?.['Название (RU)'] || initial?.['col2'] || '',
     category:  initial?.['Категория']      || initial?.['col3'] || '',
-    photo_url: initial?.['Фото (URL)']    || '',
+    photo_url: initial?.['Фото (URL)'] || initial?.['Фото 1'] || initial?.['Фото'] || '',
     price:     initial?.['Продажная цена'] || initial?.['col6'] || '',
     qty:       initial?.['В наличии (шт)'] || initial?.['col9'] || '',
   })

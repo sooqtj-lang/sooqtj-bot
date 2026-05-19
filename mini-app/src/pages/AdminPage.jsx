@@ -3,11 +3,13 @@ import { api } from '../api'
 import OrderCard from '../components/OrderCard'
 import ProductForm from '../components/ProductForm'
 import StatusBadge from '../components/StatusBadge'
+import { useTelegram } from '../useTelegram'
 
 const TABS = ['Заказы', 'Статистика', 'Товары', 'Настройки']
 const STATUSES = ['Новый', 'Подтверждён', 'В пути', 'Доставлен', 'Отменён']
 
 export default function AdminPage() {
+  const { user } = useTelegram()
   const [tab, setTab] = useState(0)
   const [orders, setOrders] = useState([])
   const [stats, setStats] = useState(null)
@@ -72,10 +74,15 @@ export default function AdminPage() {
       {/* Header */}
       <div className="bg-[#FFBE00] px-4 py-3 flex items-center gap-3 shadow">
         <Logo cls="w-10 h-10 rounded-xl object-cover" />
-        <div>
+        <div className="flex-1">
           <p className="font-bold text-[#1A1A1A] text-base leading-none">Панель Админа</p>
-          <p className="text-[10px] text-[#1A1A1A]/60 uppercase tracking-widest">SOOQ.TJ</p>
+          <p className="text-[10px] text-[#1A1A1A]/60 uppercase tracking-widest">
+            {user?.first_name ? user.first_name : 'SOOQ.TJ'}
+          </p>
         </div>
+        <button
+          onClick={() => Promise.all([loadOrders(), loadStats(), loadProducts()])}
+          className="text-[#1A1A1A]/60 text-xl px-1">↻</button>
       </div>
 
       {/* Tabs */}
@@ -161,16 +168,16 @@ export default function AdminPage() {
 
             {products.map((p, i) => (
               <div key={i} className="bg-white rounded-2xl p-3 mb-2 flex gap-3 shadow-sm">
-                {p['Фото (URL)'] && (
-                  <img src={p['Фото (URL)']} className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
+                {(p['Фото (URL)'] || p['Фото 1'] || p['Фото']) && (
+                  <img src={p['Фото (URL)'] || p['Фото 1'] || p['Фото']} className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm text-[#1A1A1A] line-clamp-1">
-                    {p['Название (RU)'] || p['col2']}
+                    {p['Название (RU)'] || p['Название'] || p['col2']}
                   </p>
                   <p className="text-xs text-gray-400">{p['Категория'] || p['col3']}</p>
                   <p className="text-sm font-bold text-[#FFBE00] mt-0.5">
-                    {p['Продажная цена'] || p['col6']} сом
+                    {p['Продажная цена'] || p['Цена'] || p['col6']} сом
                   </p>
                 </div>
                 <button onClick={() => { setEditProduct(i); setShowForm(true) }}
@@ -217,6 +224,16 @@ export default function AdminPage() {
               <p className="text-[10px] text-gray-400 mt-2 text-center">
                 PNG / JPG / SVG · рекомендуется квадратный
               </p>
+            </div>
+
+            {/* Информация о сессии */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <p className="font-bold text-sm text-[#1A1A1A] mb-2">Информация</p>
+              <p className="text-xs text-gray-400">Telegram ID: <span className="text-[#1A1A1A] font-semibold">{user?.id || '—'}</span></p>
+              <p className="text-xs text-gray-400 mt-1">Имя: <span className="text-[#1A1A1A] font-semibold">{user?.first_name || '—'}</span></p>
+              <p className="text-xs text-gray-400 mt-1">Роль: <span className="text-green-600 font-bold">admin</span></p>
+              <p className="text-xs text-gray-400 mt-1">Товаров: <span className="text-[#1A1A1A] font-semibold">{products.length}</span></p>
+              <p className="text-xs text-gray-400 mt-1">Заказов: <span className="text-[#1A1A1A] font-semibold">{orders.length}</span></p>
             </div>
           </div>
         )}

@@ -48,9 +48,9 @@ export default function ClientPage() {
         phone: form.phone,
         address: form.address,
         product_id: item._index?.toString() || '',
-        product_name: item['Название (RU)'] || item['col2'] || 'Товар',
+        product_name: item['Название (RU)'] || item['Название'] || item['col2'] || 'Товар',
         quantity: item.qty,
-        price: parseFloat(item['Продажная цена'] || item['col6'] || 0) * item.qty,
+        price: parseFloat(item['Продажная цена'] || item['Цена'] || item['col6'] || 0) * item.qty,
       })
     }
     setCart([])
@@ -140,8 +140,8 @@ export default function ClientPage() {
               <>
                 {cart.map((item, i) => (
                   <div key={i} className="bg-white rounded-2xl p-3 mb-2 flex items-center gap-3 shadow-sm">
-                    {item['Фото (URL)'] && (
-                      <img src={item['Фото (URL)']} className="w-14 h-14 rounded-xl object-cover" />
+                    {(item['Фото (URL)'] || item['Фото 1'] || item['Фото']) && (
+                      <img src={item['Фото (URL)'] || item['Фото 1'] || item['Фото']} className="w-14 h-14 rounded-xl object-cover" />
                     )}
                     <div className="flex-1">
                       <p className="font-semibold text-sm text-[#1A1A1A] line-clamp-1">

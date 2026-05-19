@@ -7,21 +7,31 @@ import DriverPage from './pages/DriverPage'
 
 const BASE = import.meta.env.VITE_API_URL || ''
 
+function getUid(user) {
+  // 1. ?uid= из URL — самый надёжный (бот всегда проставляет)
+  const params = new URLSearchParams(window.location.search)
+  const urlUid = parseInt(params.get('uid') || '0')
+  if (urlUid > 0) return urlUid
+
+  // 2. Telegram initDataUnsafe.user.id
+  const tgUid = user?.id || 0
+  if (tgUid > 0) return tgUid
+
+  return 0
+}
+
 export default function App() {
   const { ready, expand, initData, user } = useTelegram()
   const [role, setRole] = useState(null)
+  const [detectedUid, setDetectedUid] = useState(0)
 
   useEffect(() => {
     ready()
     expand()
     setInitData(initData)
 
-    // uid from URL (?uid=...) is most reliable — set by bot
-    const params = new URLSearchParams(window.location.search)
-    const urlUid = parseInt(params.get('uid') || '0')
-    const tgUid = user?.id || 0
-    const userId = urlUid || tgUid
-
+    const userId = getUid(user)
+    setDetectedUid(userId)
     setUserId(userId)
 
     if (!userId) {
@@ -45,6 +55,9 @@ export default function App() {
       />
       <p className="font-bold text-xl text-[#1A1A1A]">SOOQ.TJ</p>
       <p className="text-sm text-gray-400 mt-1">Загрузка...</p>
+      {detectedUid > 0 && (
+        <p className="text-[10px] text-gray-300 mt-1">uid: {detectedUid}</p>
+      )}
     </div>
   )
 
