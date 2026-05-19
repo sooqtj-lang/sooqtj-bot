@@ -7,7 +7,7 @@ import DriverPage from './pages/DriverPage'
 
 const BASE = import.meta.env.VITE_API_URL || ''
 
-// ─── Error Boundary (catches React render crashes) ───────────
+// ─── Error Boundary ──────────────────────────────────────────
 class ErrorBoundary extends Component {
   state = { error: null }
   static getDerivedStateFromError(e) { return { error: e } }
@@ -17,8 +17,7 @@ class ErrorBoundary extends Component {
         <p className="text-4xl mb-3">⚠️</p>
         <p className="font-bold text-[#1A1A1A] text-lg mb-2">Что-то пошло не так</p>
         <p className="text-xs text-gray-400 text-center mb-4">{String(this.state.error)}</p>
-        <button
-          onClick={() => window.location.reload()}
+        <button onClick={() => window.location.reload()}
           className="bg-[#FFBE00] text-[#1A1A1A] font-bold px-6 py-2.5 rounded-full text-sm">
           Перезагрузить
         </button>
@@ -28,19 +27,35 @@ class ErrorBoundary extends Component {
   }
 }
 
-// ─── UID detection ───────────────────────────────────────────
+// ─── UID detection ────────────────────────────────────────────
+// Приоритет: URL ?uid= > localStorage > Telegram initDataUnsafe
 function getUid(user) {
-  // 1. ?uid= из URL — самый надёжный (бот всегда проставляет)
+  // 1. ?uid= из URL — приходит когда пользователь нажимает кнопку в боте
   const params = new URLSearchParams(window.location.search)
   const urlUid = parseInt(params.get('uid') || '0')
-  if (urlUid > 0) return urlUid
+  if (urlUid > 0) {
+    // Запоминаем в localStorage чтобы следующее открытие тоже работало
+    try { localStorage.setItem('sooq_uid', String(urlUid)) } catch (_) {}
+    return urlUid
+  }
+
   // 2. Telegram initDataUnsafe.user.id
   const tgUid = user?.id || 0
-  if (tgUid > 0) return tgUid
+  if (tgUid > 0) {
+    try { localStorage.setItem('sooq_uid', String(tgUid)) } catch (_) {}
+    return tgUid
+  }
+
+  // 3. Запомненный из прошлой сессии (когда Telegram открывает без ?uid=)
+  try {
+    const stored = parseInt(localStorage.getItem('sooq_uid') || '0')
+    if (stored > 0) return stored
+  } catch (_) {}
+
   return 0
 }
 
-// ─── Main App ────────────────────────────────────────────────
+// ─── Main App ─────────────────────────────────────────────────
 function AppInner() {
   const { ready, expand, initData, user } = useTelegram()
   const [role, setRole] = useState(null)
