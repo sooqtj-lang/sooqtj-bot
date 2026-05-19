@@ -6,7 +6,7 @@ import AdminPage from './pages/AdminPage'
 import DriverPage from './pages/DriverPage'
 
 export default function App() {
-  const { ready, expand, initData } = useTelegram()
+  const { ready, expand, initData, user } = useTelegram()
   const [role, setRole] = useState(null)
 
   useEffect(() => {
