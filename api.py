@@ -806,6 +806,11 @@ class BroadcastIn(BaseModel):
     text: str
 
 
+@app.get("/api/version")
+def version():
+    return {"v": "cf7c453", "reset_stats": "yes"}
+
+
 @app.post("/api/_admin/reset-stats")
 def reset_stats(user=Depends(require_admin)):
     """Hard reset: clears all orders from Sheets + clients/expenses/reviews from Postgres."""
