@@ -1284,17 +1284,45 @@ export default function AdminPage() {
                 </button>
               </div>
 
+              {/* Apply manual prices */}
+              <div className={card}>
+                <p className="font-black text-sm text-[#0A0A0A] dark:text-white mb-2 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg flex items-center justify-center shadow-sm" style={{ background: 'linear-gradient(135deg,#F5C518,#FF9C00)' }}>
+                    <span className="text-[11px]">💲</span>
+                  </span>
+                  Применить цены
+                </p>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 mb-3 leading-relaxed">
+                  Запишет в Google Sheets финальные цены (сомони) по всем артикулам ORM. Себестоимость и остаток не меняются.
+                </p>
+                <button onClick={async () => {
+                  try {
+                    const res = await api.applyManualPrices()
+                    setToast({ ok: true, text: `✓ Цены обновлены: ${res.count} товаров${res.skipped?.length ? ` · пропущено: ${res.skipped.length}` : ''}` })
+                    loadProducts()
+                  } catch (e) {
+                    setToast({ ok: false, text: `Ошибка: ${e.message}` })
+                  }
+                  setTimeout(() => setToast(null), 5000)
+                }}
+                  className="w-full gold text-[#111] font-black rounded-2xl py-3 text-sm
+                    active:scale-95 transition-transform shadow-[0_4px_16px_rgba(245,197,24,0.35)]
+                    flex items-center justify-center gap-2">
+                  💲 Применить цены
+                </button>
+              </div>
+
               {/* Reset stats */}
               <div className={card}>
                 <p className="font-black text-sm text-[#0A0A0A] dark:text-white mb-2 flex items-center gap-2">
                   <span className="w-6 h-6 rounded-lg flex items-center justify-center shadow-sm bg-red-500">
                     <Trash2 size={13} color="#fff" strokeWidth={2.5} />
                   </span>
-                  Сброс данных
+                  Сброс статистики
                 </p>
                 <p className="text-[11px] text-gray-400 dark:text-gray-500 mb-3 leading-relaxed">
-                  Удаляет все заказы из Google Sheets и очищает клиентов, расходы, отзывы из базы данных.
-                  Тестовый период завершён — данные нельзя восстановить.
+                  Удаляет заказы, клиентов, расходы, отзывы.{' '}
+                  <span className="text-green-500 font-bold">Товары и цены НЕ затрагиваются.</span>
                 </p>
                 <button onClick={async () => {
                   if (!window.confirm('⚠️ СБРОС ВСЕХ ДАННЫХ\n\nБудут удалены:\n• Все заказы (Google Sheets)\n• Все клиенты\n• Все расходы\n• Все отзывы\n\nЭто нельзя отменить! Продолжить?')) return

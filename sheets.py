@@ -356,6 +356,28 @@ def get_order_user_id(order_id: str):
     return None
 
 
+def set_sale_price(row_index: int, price: float) -> bool:
+    """Update only 'Продажная цена' and 'Цена со скидкой' for a product row."""
+    _invalidate_products()
+    ws = _get_sheet(PRODUCTS_SHEET)
+    if not ws:
+        return False
+    try:
+        header = ws.row_values(1)
+        actual_row = row_index + 2
+        updates = []
+        for key in ("price", "price_disc"):
+            idx = _find_col(header, *_COLS[key])
+            if idx >= 0:
+                updates.append({"range": f"{_col_letter(idx)}{actual_row}", "values": [[price]]})
+        if updates:
+            ws.batch_update(updates)
+        return True
+    except Exception as e:
+        print(f"[sheets] set_sale_price error: {e}")
+        return False
+
+
 def decrement_product_qty(product_id: str, quantity: int = 1) -> bool:
     """Decrease 'В наличии (шт)' for the product with the given ID.
     Returns True on success, False if product not found or qty already 0."""

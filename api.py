@@ -287,6 +287,27 @@ _NAME_TO_CODE = {
     "моющий пылесос": "ORM-513",
 }
 
+# ── Manual sale prices (somoni) set by owner ─────────────────
+_MANUAL_PRICES: dict[str, float] = {
+    "ORM-513":  770,
+    "ORM-8028": 250,
+    "ORM-8823": 470,
+    "ORM-8860": 570,
+    "ORM-8821": 470,
+    "ORM-3579": 550,
+    "ORM-3595": 450,
+    "ORM-925":  189,
+    "ORM-8031": 230,
+    "ORM-8011": 250,
+    "ORM-3311": 650,
+    "ORM-3313": 430,
+    "ORM-213":  850,
+    "ORM-211":  750,
+    "ORM-6807": 1250,
+    "ORM-3536": 289,
+    "ORM-8060": 179,
+}
+
 
 def _extract_orm_code(product: dict) -> str | None:
     """Find ORM-XXX in any field of the product dict (handles swapped Артикул/Категория).
@@ -809,6 +830,30 @@ class BroadcastIn(BaseModel):
 @app.get("/api/version")
 def version():
     return {"v": "cf7c453", "reset_stats": "yes"}
+
+
+@app.post("/api/_admin/apply-manual-prices")
+def apply_manual_prices(user=Depends(require_admin)):
+    """Write the owner-set sale prices from _MANUAL_PRICES into Sheets.
+    Updates 'Продажная цена' and 'Цена со скидкой' only — does NOT touch cost or qty."""
+    products = sheets.get_products()
+    updated, skipped = [], []
+    for p in products:
+        row_index = p.get("_index")
+        if row_index is None:
+            skipped.append({"reason": "no _index"})
+            continue
+        code = _extract_orm_code(p)
+        if not code or code not in _MANUAL_PRICES:
+            skipped.append({"id": p.get("ID"), "code": code, "reason": "not in price list"})
+            continue
+        price = _MANUAL_PRICES[code]
+        ok = sheets.set_sale_price(row_index, price)
+        if ok:
+            updated.append({"id": p.get("ID"), "code": code, "price": price})
+        else:
+            skipped.append({"id": p.get("ID"), "code": code, "reason": "sheets write failed"})
+    return {"updated": updated, "skipped": skipped, "count": len(updated)}
 
 
 @app.post("/api/_admin/reset-stats")

@@ -85,5 +85,6 @@ export const api = {
   addExpense:      (name, amount) => req('/api/expenses', { method: 'POST', body: JSON.stringify({ name, amount }) }),
   deleteExpense:   (id)         => req(`/api/expenses/${id}`, { method: 'DELETE' }),
   recalcPrices:    ()           => req('/api/_admin/recalc-prices', { method: 'POST' }),
-  resetStats:      ()           => req('/api/_admin/reset-stats',   { method: 'POST' }),
+  resetStats:         ()        => req('/api/_admin/reset-stats',        { method: 'POST' }),
+  applyManualPrices:  ()        => req('/api/_admin/apply-manual-prices', { method: 'POST' }),
 }
