@@ -386,17 +386,16 @@ def decrement_product_qty(product_id: str, quantity: int = 1) -> bool:
 
 
 def clear_orders() -> int:
-    """Delete all order rows (keep the header). Returns count of deleted rows."""
+    """Clear all order rows and restore only the header. Returns count of deleted rows.
+    Uses ws.clear() + single header write instead of row-by-row deletion (avoids timeout)."""
     ws = _ensure_orders_sheet()
     try:
         all_rows = ws.get_all_values()
-        count = len(all_rows) - 1  # minus header
-        if count <= 0:
-            return 0
-        # Delete rows from bottom to top to keep indices valid
-        for i in range(len(all_rows), 1, -1):
-            ws.delete_rows(i)
-        print(f"[sheets] clear_orders: deleted {count} rows")
+        count = max(0, len(all_rows) - 1)
+        # Atomically wipe the sheet and restore header in 2 API calls
+        ws.clear()
+        ws.update("A1", [ORDERS_HEADER])
+        print(f"[sheets] clear_orders: cleared {count} rows")
         return count
     except Exception as e:
         print(f"[sheets] clear_orders error: {e}")
