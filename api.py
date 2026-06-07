@@ -808,18 +808,24 @@ class BroadcastIn(BaseModel):
 
 @app.post("/api/_admin/reset-stats")
 def reset_stats(user=Depends(require_admin)):
-    """Hard reset: clears all orders from Sheets + clients/expenses/reviews from Postgres.
-    Irreversible — requires admin role. Used after test period."""
-    orders_deleted = sheets.clear_orders()
-    db_result = db.reset_all_data()
-    print(f"[reset-stats] orders={orders_deleted} db={db_result}")
-    return {
-        "ok": True,
-        "orders_deleted": orders_deleted,
-        "clients_deleted": db_result.get("clients", 0),
-        "expenses_deleted": db_result.get("expenses", 0),
-        "reviews_deleted": db_result.get("reviews", 0),
-    }
+    """Hard reset: clears all orders from Sheets + clients/expenses/reviews from Postgres."""
+    result = {"ok": True, "orders_deleted": 0, "clients_deleted": 0,
+              "expenses_deleted": 0, "reviews_deleted": 0, "errors": []}
+    try:
+        result["orders_deleted"] = sheets.clear_orders()
+    except Exception as e:
+        result["errors"].append(f"sheets: {e}")
+        print(f"[reset-stats] sheets error: {e}")
+    try:
+        db_result = db.reset_all_data()
+        result["clients_deleted"]  = db_result.get("clients", 0)
+        result["expenses_deleted"] = db_result.get("expenses", 0)
+        result["reviews_deleted"]  = db_result.get("reviews", 0)
+    except Exception as e:
+        result["errors"].append(f"db: {e}")
+        print(f"[reset-stats] db error: {e}")
+    print(f"[reset-stats] done: {result}")
+    return result
 
 
 @app.post("/api/broadcast")
