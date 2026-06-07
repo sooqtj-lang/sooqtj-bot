@@ -356,6 +356,53 @@ def get_order_user_id(order_id: str):
     return None
 
 
+def decrement_product_qty(product_id: str, quantity: int = 1) -> bool:
+    """Decrease 'В наличии (шт)' for the product with the given ID.
+    Returns True on success, False if product not found or qty already 0."""
+    _invalidate_products()
+    ws = _get_sheet(PRODUCTS_SHEET)
+    if not ws:
+        return False
+    try:
+        header = ws.row_values(1)
+        id_col = _find_col(header, "ID", "id")
+        qty_col = _find_col(header, *_COLS["qty"])
+        if id_col < 0 or qty_col < 0:
+            print(f"[sheets] decrement_product_qty: ID or qty column not found")
+            return False
+        all_rows = ws.get_all_values()
+        for i, row in enumerate(all_rows[1:], start=2):  # skip header, 1-based
+            if len(row) > id_col and str(row[id_col]).strip() == str(product_id).strip():
+                current = int(row[qty_col]) if (len(row) > qty_col and str(row[qty_col]).strip().isdigit()) else 0
+                new_qty = max(0, current - quantity)
+                ws.update_cell(i, qty_col + 1, new_qty)
+                print(f"[sheets] decrement_product_qty id={product_id} {current}→{new_qty}")
+                return True
+        print(f"[sheets] decrement_product_qty: product_id={product_id} not found")
+        return False
+    except Exception as e:
+        print(f"[sheets] decrement_product_qty error: {e}")
+        return False
+
+
+def clear_orders() -> int:
+    """Delete all order rows (keep the header). Returns count of deleted rows."""
+    ws = _ensure_orders_sheet()
+    try:
+        all_rows = ws.get_all_values()
+        count = len(all_rows) - 1  # minus header
+        if count <= 0:
+            return 0
+        # Delete rows from bottom to top to keep indices valid
+        for i in range(len(all_rows), 1, -1):
+            ws.delete_rows(i)
+        print(f"[sheets] clear_orders: deleted {count} rows")
+        return count
+    except Exception as e:
+        print(f"[sheets] clear_orders error: {e}")
+        return 0
+
+
 def get_stats():
     ws    = _ensure_orders_sheet()
     rows  = ws.get_all_records()

@@ -549,6 +549,11 @@ def create_order(data: OrderIn, user=Depends(get_current_user)):
         data.product_id, data.product_name, data.quantity, data.price,
         article=data.article,
     )
+    # Decrement stock in Google Sheets
+    try:
+        sheets.decrement_product_qty(data.product_id, data.quantity)
+    except Exception as e:
+        print(f"[orders] decrement_product_qty failed: {e}")
     # Save / update client profile in PostgreSQL
     db.upsert_client(user["id"], data.name, data.phone, data.address, data.price)
     try:
@@ -595,6 +600,12 @@ def create_manual_order(data: ManualOrderIn, user=Depends(require_admin)):
         data.product_name, data.quantity, data.price,
         article=data.article,
     )
+    # Decrement stock for manual orders too (if product_id is real)
+    if data.product_id and data.product_id != "MANUAL":
+        try:
+            sheets.decrement_product_qty(data.product_id, data.quantity)
+        except Exception as e:
+            print(f"[orders/manual] decrement_product_qty failed: {e}")
     try:
         art_line = f"🔖 Арт.: `{data.article}`\n" if data.article else ""
         bot.send_message(
@@ -631,6 +642,11 @@ def create_order_batch(data: BatchOrderIn, user=Depends(get_current_user)):
         )
         order_ids.append(order_id)
         total += item.price
+        # Decrement stock for each cart item
+        try:
+            sheets.decrement_product_qty(item.product_id, item.quantity)
+        except Exception as e:
+            print(f"[orders/batch] decrement_product_qty failed: {e}")
 
     # Save / update client profile in PostgreSQL (once for the whole cart)
     db.upsert_client(user["id"], data.name, data.phone, data.address, total)
@@ -788,6 +804,22 @@ def remove_expense(expense_id: int, user=Depends(require_admin)):
 
 class BroadcastIn(BaseModel):
     text: str
+
+
+@app.post("/api/_admin/reset-stats")
+def reset_stats(user=Depends(require_admin)):
+    """Hard reset: clears all orders from Sheets + clients/expenses/reviews from Postgres.
+    Irreversible — requires admin role. Used after test period."""
+    orders_deleted = sheets.clear_orders()
+    db_result = db.reset_all_data()
+    print(f"[reset-stats] orders={orders_deleted} db={db_result}")
+    return {
+        "ok": True,
+        "orders_deleted": orders_deleted,
+        "clients_deleted": db_result.get("clients", 0),
+        "expenses_deleted": db_result.get("expenses", 0),
+        "reviews_deleted": db_result.get("reviews", 0),
+    }
 
 
 @app.post("/api/broadcast")

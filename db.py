@@ -393,6 +393,30 @@ def delete_expense(expense_id: int) -> bool:
         return False
 
 
+def reset_all_data() -> dict:
+    """Truncate clients, expenses, and reviews tables. Used for end-of-test reset."""
+    result = {"clients": 0, "expenses": 0, "reviews": 0}
+    if not _pg_ok:
+        return result
+    conn = _conn()
+    if conn is None:
+        return result
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM clients")
+            result["clients"] = cur.rowcount
+            cur.execute("DELETE FROM expenses")
+            result["expenses"] = cur.rowcount
+            cur.execute("DELETE FROM reviews")
+            result["reviews"] = cur.rowcount
+        conn.commit()
+        print(f"[db] reset_all_data: {result}")
+    except Exception as e:
+        logging.error(f"[db] reset_all_data error: {e}")
+        conn.rollback()
+    return result
+
+
 def get_client_user_ids() -> list[int]:
     """Return list of all client user_ids for broadcast."""
     if not _pg_ok:

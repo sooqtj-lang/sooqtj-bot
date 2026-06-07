@@ -1284,6 +1284,38 @@ export default function AdminPage() {
                 </button>
               </div>
 
+              {/* Reset stats */}
+              <div className={card}>
+                <p className="font-black text-sm text-[#0A0A0A] dark:text-white mb-2 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg flex items-center justify-center shadow-sm bg-red-500">
+                    <Trash2 size={13} color="#fff" strokeWidth={2.5} />
+                  </span>
+                  Сброс данных
+                </p>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 mb-3 leading-relaxed">
+                  Удаляет все заказы из Google Sheets и очищает клиентов, расходы, отзывы из базы данных.
+                  Тестовый период завершён — данные нельзя восстановить.
+                </p>
+                <button onClick={async () => {
+                  if (!window.confirm('⚠️ СБРОС ВСЕХ ДАННЫХ\n\nБудут удалены:\n• Все заказы (Google Sheets)\n• Все клиенты\n• Все расходы\n• Все отзывы\n\nЭто нельзя отменить! Продолжить?')) return
+                  if (!window.confirm('Вы уверены? Это окончательное удаление всех данных.')) return
+                  try {
+                    const res = await api.resetStats()
+                    setToast({ ok: true, text: `✓ Сброс выполнен: заказов ${res.orders_deleted}, клиентов ${res.clients_deleted}, расходов ${res.expenses_deleted}, отзывов ${res.reviews_deleted}` })
+                    loadAll()
+                  } catch (e) {
+                    setToast({ ok: false, text: `Ошибка: ${e.message}` })
+                  }
+                  setTimeout(() => setToast(null), 7000)
+                }}
+                  className="w-full bg-red-500 hover:bg-red-600 text-white font-black rounded-2xl py-3 text-sm
+                    active:scale-95 transition-transform shadow-[0_4px_16px_rgba(239,68,68,0.35)]
+                    flex items-center justify-center gap-2">
+                  <Trash2 size={15} strokeWidth={2.5} />
+                  Сбросить все данные
+                </button>
+              </div>
+
               {/* Info */}
               <div className={card}>
                 <p className="font-black text-sm text-[#0A0A0A] dark:text-white mb-3 flex items-center gap-2">
