@@ -69,7 +69,7 @@ export default function AdminPage() {
   const [mo, setMo] = useState({
     source: 'Instagram', name: '', phone: '', address: '',
     product_id: '', product_name: '', quantity: 1, price: 0,
-    custom: false, article: '',
+    discount: '', custom: false, article: '',
   })
   const [statusFilter, setStatusFilter] = useState('Все')
   const [logoUrl,  setLogoUrl]  = useState(`${BACKEND}/uploads/logo.png`)
@@ -236,11 +236,11 @@ export default function AdminPage() {
         product_id:   mo.product_id || 'MANUAL',
         product_name: mo.product_name.trim(),
         quantity:     Number(mo.quantity) || 1,
-        price:        Number(mo.price)    || 0,
+        price:        Math.max(0, (Number(mo.price) || 0) - (Number(mo.discount) || 0)),
         article:      mo.article || '',
       })
       setShowManualOrder(false)
-      setMo({ source: 'Instagram', name: '', phone: '', address: '', product_id: '', product_name: '', quantity: 1, price: 0, custom: false, article: '' })
+      setMo({ source: 'Instagram', name: '', phone: '', address: '', product_id: '', product_name: '', quantity: 1, price: 0, discount: '', custom: false, article: '' })
       setToast({ ok: true, text: 'Заказ добавлен ✓' })
       setTimeout(() => setToast(null), 3000)
       loadOrders()
@@ -1508,6 +1508,25 @@ export default function AdminPage() {
                   <input inputMode="decimal" placeholder="0" value={mo.price}
                     onChange={e => setMo({ ...mo, price: e.target.value.replace(/[^\d.,]/g, '').replace(',', '.') })}
                     className="w-full bg-[#F5F5F5] dark:bg-white/5 rounded-xl px-3.5 py-3.5 text-base font-bold text-[#0A0A0A] dark:text-white outline-none" />
+                </div>
+              </div>
+
+              {/* Discount row */}
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <p className="text-[10px] font-bold text-orange-400 mb-1 px-1 uppercase tracking-wider">🏷 Скидка (сом)</p>
+                  <input inputMode="decimal" placeholder="0"
+                    value={mo.discount}
+                    onChange={e => setMo({ ...mo, discount: e.target.value.replace(/[^\d.,]/g, '').replace(',', '.') })}
+                    className="w-full bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/50 rounded-xl px-3.5 py-3.5 text-base font-bold text-orange-600 dark:text-orange-400 outline-none" />
+                </div>
+                <div className="flex-1 pb-0">
+                  <p className="text-[10px] font-bold text-green-500 mb-1 px-1 uppercase tracking-wider">✅ Итого</p>
+                  <div className="w-full bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50 rounded-xl px-3.5 py-3.5">
+                    <p className="text-base font-black text-green-600 dark:text-green-400">
+                      {Math.max(0, (Number(mo.price) || 0) - (Number(mo.discount) || 0))} сом
+                    </p>
+                  </div>
                 </div>
               </div>
 
