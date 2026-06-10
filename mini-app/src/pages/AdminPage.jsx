@@ -658,21 +658,6 @@ export default function AdminPage() {
                         <div className="flex items-center gap-4 mb-3">
                           <div className="flex flex-col items-center gap-2">
                             <DoughnutChart income={netProfit} costOfGoods={costOfGoods} expenses={explicitExp} size={130} />
-                            {/* legend */}
-                            <div className="flex flex-col gap-1 text-[10px] font-bold">
-                              <div className="flex items-center gap-1.5">
-                                <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: '#F5C518', opacity: 0.85 }} />
-                                <span className="text-gray-500 dark:text-gray-400">Себестоимость</span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="w-2.5 h-2.5 rounded-sm bg-red-500 flex-shrink-0" />
-                                <span className="text-gray-500 dark:text-gray-400">Доп. расходы</span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="w-2.5 h-2.5 rounded-sm bg-green-500 flex-shrink-0" />
-                                <span className="text-gray-500 dark:text-gray-400">Прибыль</span>
-                              </div>
-                            </div>
                           </div>
                           <div className="flex-1 space-y-2">
                             <div>
