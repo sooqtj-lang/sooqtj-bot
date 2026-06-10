@@ -678,60 +678,74 @@ export default function AdminPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="bg-[#F5F5F5] dark:bg-white/5 rounded-xl p-2.5 space-y-1.5 mb-3">
-                          <div className="flex justify-between text-[11px]">
-                            <span className="text-gray-500 dark:text-gray-400">Себестоимость товаров</span>
-                            <span className="font-bold text-yellow-600 dark:text-yellow-500">{fmt(costOfGoods)} сом</span>
-                          </div>
-                          <div className="flex justify-between text-[11px]">
-                            <span className="text-gray-500 dark:text-gray-400">Доп. расходы</span>
-                            <span className="font-bold text-orange-500">{fmt(explicitExp)} сом</span>
+                        {/* ── Себестоимость товаров — бледно-жёлтый блок ── */}
+                        <div className="rounded-xl p-3 mb-2"
+                          style={{ background: 'rgba(245,197,24,0.08)', border: '1px solid rgba(245,197,24,0.22)' }}>
+                          <p className="text-[10px] font-black uppercase tracking-widest mb-2"
+                            style={{ color: '#b8860b' }}>
+                            📦 Себестоимость товаров
+                          </p>
+                          <div className="flex justify-between items-center">
+                            <span className="text-[12px] text-gray-500 dark:text-gray-400">
+                              {delivered.length} доставленных заказов
+                            </span>
+                            <span className="font-black text-base" style={{ color: '#b8860b' }}>
+                              {fmt(costOfGoods)} сом
+                            </span>
                           </div>
                         </div>
 
-                        {/* Add expense form */}
-                        <div className="space-y-2 mb-3">
-                          <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                            Добавить расход
+                        {/* ── Доп. расходы — оранжевый блок ── */}
+                        <div className="rounded-xl p-3 mb-3"
+                          style={{ background: 'rgba(249,115,22,0.07)', border: '1px solid rgba(249,115,22,0.2)' }}>
+                          <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-orange-500">
+                            🧾 Доп. расходы
                           </p>
-                          <div className="flex gap-2">
+
+                          {/* Add expense form */}
+                          <div className="flex gap-2 mb-2">
                             <input value={expForm.name}
                               onChange={e => setExpForm({ ...expForm, name: e.target.value })}
                               placeholder="Налог, реклама…"
-                              className="flex-1 bg-[#F5F5F5] dark:bg-white/5 rounded-xl px-3 py-2.5 text-xs font-bold text-[#0A0A0A] dark:text-white outline-none" />
+                              className="flex-1 bg-white/60 dark:bg-white/5 rounded-xl px-3 py-2 text-xs font-bold text-[#0A0A0A] dark:text-white outline-none border border-orange-200 dark:border-orange-800/40" />
                             <input value={expForm.amount}
                               inputMode="decimal"
                               onChange={e => setExpForm({ ...expForm, amount: e.target.value.replace(/[^\d.,]/g, '').replace(',', '.') })}
                               placeholder="Сумма"
-                              className="w-24 bg-[#F5F5F5] dark:bg-white/5 rounded-xl px-3 py-2.5 text-xs font-bold text-[#0A0A0A] dark:text-white outline-none" />
+                              className="w-24 bg-white/60 dark:bg-white/5 rounded-xl px-3 py-2 text-xs font-bold text-[#0A0A0A] dark:text-white outline-none border border-orange-200 dark:border-orange-800/40" />
                             <button onClick={submitExpense}
-                              className="px-3 rounded-xl gold flex items-center justify-center active:scale-95 transition-transform">
-                              <Plus size={16} color="#111" strokeWidth={2.5} />
+                              className="px-3 rounded-xl bg-orange-400 flex items-center justify-center active:scale-95 transition-transform">
+                              <Plus size={16} color="#fff" strokeWidth={2.5} />
                             </button>
                           </div>
-                        </div>
 
-                        {/* Expenses list */}
-                        {expenses.length > 0 && (
-                          <div className="space-y-1">
-                            <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">
-                              Список расходов
-                            </p>
-                            {expenses.map(e => (
-                              <div key={e.id} className="flex items-center justify-between text-[12px] py-1.5 border-b border-black/[0.04] dark:border-white/[0.05] last:border-0">
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-[#0A0A0A] dark:text-white font-bold truncate">{e.name}</p>
-                                  <p className="text-[10px] text-gray-400">{e.created_at}</p>
+                          {/* Expenses list */}
+                          {expenses.length > 0 ? (
+                            <div className="space-y-1">
+                              {expenses.map(e => (
+                                <div key={e.id} className="flex items-center justify-between text-[12px] py-1.5 border-b border-orange-100 dark:border-orange-900/30 last:border-0">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[#0A0A0A] dark:text-white font-bold truncate">{e.name}</p>
+                                    <p className="text-[10px] text-gray-400">{e.created_at}</p>
+                                  </div>
+                                  <p className="font-black text-orange-500 mr-2">{fmt(e.amount)} сом</p>
+                                  <button onClick={() => removeExpense(e.id)}
+                                    className="w-6 h-6 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center active:scale-90 transition-transform">
+                                    <Trash2 size={11} color="#ef4444" strokeWidth={2} />
+                                  </button>
                                 </div>
-                                <p className="font-black text-orange-500 mr-2">{fmt(e.amount)} сом</p>
-                                <button onClick={() => removeExpense(e.id)}
-                                  className="w-6 h-6 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center active:scale-90 transition-transform">
-                                  <Trash2 size={11} color="#ef4444" strokeWidth={2} />
-                                </button>
+                              ))}
+                              <div className="flex justify-between pt-1.5 text-[12px]">
+                                <span className="text-orange-400 font-bold">Итого расходов</span>
+                                <span className="font-black text-orange-500">{fmt(explicitExp)} сом</span>
                               </div>
-                            ))}
-                          </div>
-                        )}
+                            </div>
+                          ) : (
+                            <p className="text-[11px] text-orange-300 dark:text-orange-800 font-bold">
+                              Нет доп. расходов — добавь выше
+                            </p>
+                          )}
+                        </div>
                       </div>
                     )
                   })()}
