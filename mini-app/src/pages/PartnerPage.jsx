@@ -368,7 +368,23 @@ export default function PartnerPage({ realRole }) {
                       💰 Финансы (Доставлено)
                     </p>
                     <div className="flex items-center gap-4 mb-3">
-                      <DoughnutChart income={netProfit} expense={totalExpense} size={140} />
+                      <div className="flex flex-col items-center gap-2">
+                        <DoughnutChart income={netProfit} costOfGoods={costOfGoods} expenses={explicitExp} size={120} />
+                        <div className="flex flex-col gap-1 text-[10px] font-bold">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: '#F5C518', opacity: 0.85 }} />
+                            <span className="text-gray-500 dark:text-gray-400">Себестоимость</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-sm bg-orange-500 flex-shrink-0" />
+                            <span className="text-gray-500 dark:text-gray-400">Доп. расходы</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-sm bg-green-500 flex-shrink-0" />
+                            <span className="text-gray-500 dark:text-gray-400">Прибыль</span>
+                          </div>
+                        </div>
+                      </div>
                       <div className="flex-1 space-y-2">
                         <div>
                           <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold">Выручка</p>
@@ -376,41 +392,63 @@ export default function PartnerPage({ realRole }) {
                         </div>
                         <div>
                           <p className="text-[10px] font-bold flex items-center gap-1">
-                            <span className="w-2 h-2 bg-red-500 rounded-full" />
-                            <span className="text-gray-400 dark:text-gray-500">Расход</span>
+                            <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: '#F5C518', opacity: 0.85 }} />
+                            <span className="text-gray-400 dark:text-gray-500">Себест.</span>
                           </p>
-                          <p className="font-black text-sm text-red-500">{fmt(totalExpense)} сом</p>
+                          <p className="font-black text-sm text-yellow-600 dark:text-yellow-500">{fmt(costOfGoods)} сом</p>
                         </div>
                         <div>
                           <p className="text-[10px] font-bold flex items-center gap-1">
-                            <span className="w-2 h-2 bg-green-500 rounded-full" />
-                            <span className="text-gray-400 dark:text-gray-500">Чистая прибыль</span>
+                            <span className="w-2 h-2 rounded-sm bg-orange-500 flex-shrink-0" />
+                            <span className="text-gray-400 dark:text-gray-500">Доп. расх.</span>
+                          </p>
+                          <p className="font-black text-sm text-orange-500">{fmt(explicitExp)} сом</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-sm bg-green-500 flex-shrink-0" />
+                            <span className="text-gray-400 dark:text-gray-500">Прибыль</span>
                           </p>
                           <p className="font-black text-sm text-green-500">{fmt(netProfit)} сом</p>
                         </div>
                       </div>
                     </div>
-                    <div className="bg-[#F5F5F5] dark:bg-white/5 rounded-xl p-2.5 space-y-1.5">
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-gray-500 dark:text-gray-400">Себестоимость товаров</span>
-                        <span className="font-bold text-yellow-600 dark:text-yellow-500">{fmt(costOfGoods)} сом</span>
-                      </div>
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-gray-500 dark:text-gray-400">Доп. расходы</span>
-                        <span className="font-bold text-orange-500">{fmt(explicitExp)} сом</span>
+
+                    {/* себестоимость — бледно-жёлтый */}
+                    <div className="rounded-xl p-3 mb-2"
+                      style={{ background: 'rgba(245,197,24,0.08)', border: '1px solid rgba(245,197,24,0.22)' }}>
+                      <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: '#b8860b' }}>
+                        📦 Себестоимость товаров
+                      </p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] text-gray-500 dark:text-gray-400">{delivered.length} доставленных</span>
+                        <span className="font-black text-base" style={{ color: '#b8860b' }}>{fmt(costOfGoods)} сом</span>
                       </div>
                     </div>
-                    {expenses.length > 0 && (
-                      <div className="mt-3 space-y-1">
-                        <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">Доп. расходы</p>
-                        {expenses.slice(0, 5).map(e => (
-                          <div key={e.id} className="flex justify-between text-[11px] py-1 border-b border-black/[0.04] dark:border-white/[0.05] last:border-0">
-                            <span className="text-gray-600 dark:text-gray-300">{e.name}</span>
-                            <span className="font-bold text-orange-500">{fmt(e.amount)} сом</span>
+
+                    {/* доп. расходы — оранжевый */}
+                    <div className="rounded-xl p-3"
+                      style={{ background: 'rgba(249,115,22,0.07)', border: '1px solid rgba(249,115,22,0.2)' }}>
+                      <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-orange-500">
+                        🧾 Доп. расходы
+                      </p>
+                      {expenses.length > 0 ? (
+                        <div className="space-y-1">
+                          {expenses.map(e => (
+                            <div key={e.id} className="flex justify-between text-[11px] py-1 border-b border-orange-100 dark:border-orange-900/30 last:border-0">
+                              <span className="text-gray-600 dark:text-gray-300">{e.name}</span>
+                              <span className="font-bold text-orange-500">{fmt(e.amount)} сом</span>
+                            </div>
+                          ))}
+                          <div className="flex justify-between pt-1 text-[11px]">
+                            <span className="text-orange-400 font-bold">Итого</span>
+                            <span className="font-black text-orange-500">{fmt(explicitExp)} сом</span>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-orange-300 dark:text-orange-800 font-bold">Нет доп. расходов</p>
+                      )}
+                    </div>
                   </div>
                 )
               })()}
