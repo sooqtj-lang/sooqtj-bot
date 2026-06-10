@@ -11,16 +11,18 @@ export default function DoughnutChart({
 }) {
   const cog  = costOfGoods !== undefined ? costOfGoods : expense
   const profit = Math.max(0, income)
-  const total = profit + cog + explicitExp || 1
+  // chart only shows profit + explicit expenses (cog excluded from slices)
+  const chartTotal = profit + explicitExp || 1
+  const revenue    = profit + cog + explicitExp  // shown in center
 
   const r      = size / 2
   const stroke = size * 0.18
   const innerR = r - stroke / 2
   const c      = 2 * Math.PI * innerR
 
-  const profitDash = (profit / total) * c
-  const cogDash    = (cog    / total) * c
-  const expDash    = (explicitExp / total) * c
+  const profitDash = (profit      / chartTotal) * c
+  const expDash    = (explicitExp / chartTotal) * c
+  const cogDash    = 0  // kept for legacy compat, not rendered
 
   return (
     <div className="relative inline-flex" style={{ width: size, height: size }}>
@@ -29,22 +31,13 @@ export default function DoughnutChart({
         <circle cx={r} cy={r} r={innerR} fill="none"
           stroke="#1F2937" strokeOpacity="0.12" strokeWidth={stroke} />
 
-        {/* себестоимость — бледно-золотой */}
-        {cog > 0 && (
-          <circle cx={r} cy={r} r={innerR} fill="none"
-            stroke="#F5C518" strokeOpacity="0.75"
-            strokeWidth={stroke}
-            strokeDasharray={`${cogDash} ${c}`}
-            strokeDashoffset={0}
-            strokeLinecap="butt" />
-        )}
         {/* доп. расходы — оранжевый */}
         {explicitExp > 0 && (
           <circle cx={r} cy={r} r={innerR} fill="none"
             stroke="#F97316"
             strokeWidth={stroke}
             strokeDasharray={`${expDash} ${c}`}
-            strokeDashoffset={-cogDash}
+            strokeDashoffset={0}
             strokeLinecap="butt" />
         )}
         {/* прибыль — зелёный */}
@@ -53,14 +46,14 @@ export default function DoughnutChart({
             stroke="#22C55E"
             strokeWidth={stroke}
             strokeDasharray={`${profitDash} ${c}`}
-            strokeDashoffset={-(cogDash + expDash)}
+            strokeDashoffset={-expDash}
             strokeLinecap="butt" />
         )}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <p className="text-[9px] uppercase font-black tracking-widest text-gray-400 dark:text-gray-500">Итого</p>
+        <p className="text-[9px] uppercase font-black tracking-widest text-gray-400 dark:text-gray-500">Выручка</p>
         <p className="font-black text-lg leading-none mt-0.5 text-[#0A0A0A] dark:text-white">
-          {Math.round(profit + cog + explicitExp)}
+          {Math.round(revenue)}
         </p>
         <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 mt-0.5">сом</p>
       </div>
