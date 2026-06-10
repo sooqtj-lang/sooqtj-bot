@@ -376,7 +376,7 @@ export default function PartnerPage({ realRole }) {
                             <span className="text-gray-500 dark:text-gray-400">Себестоимость</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-sm bg-orange-500 flex-shrink-0" />
+                            <span className="w-2.5 h-2.5 rounded-sm bg-red-500 flex-shrink-0" />
                             <span className="text-gray-500 dark:text-gray-400">Доп. расходы</span>
                           </div>
                           <div className="flex items-center gap-1.5">
@@ -399,10 +399,10 @@ export default function PartnerPage({ realRole }) {
                         </div>
                         <div>
                           <p className="text-[10px] font-bold flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-sm bg-orange-500 flex-shrink-0" />
+                            <span className="w-2 h-2 rounded-sm bg-red-500 flex-shrink-0" />
                             <span className="text-gray-400 dark:text-gray-500">Доп. расх.</span>
                           </p>
-                          <p className="font-black text-sm text-orange-500">{fmt(explicitExp)} сом</p>
+                          <p className="font-black text-sm text-red-500">{fmt(explicitExp)} сом</p>
                         </div>
                         <div>
                           <p className="text-[10px] font-bold flex items-center gap-1">
@@ -428,8 +428,8 @@ export default function PartnerPage({ realRole }) {
 
                     {/* доп. расходы — оранжевый */}
                     <div className="rounded-xl p-3"
-                      style={{ background: 'rgba(249,115,22,0.07)', border: '1px solid rgba(249,115,22,0.2)' }}>
-                      <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-orange-500">
+                      style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                      <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-red-500">
                         🧾 Доп. расходы
                       </p>
                       {expenses.length > 0 ? (

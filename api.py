@@ -764,7 +764,15 @@ def update_order(order_id: str, data: StatusIn, user=Depends(require_driver_or_a
 
 @app.get("/api/stats")
 def stats(user=Depends(require_admin)):
-    return sheets.get_stats()
+    try:
+        return sheets.get_stats()
+    except Exception as e:
+        print(f"[stats] error: {e}")
+        return {
+            "today_count": 0, "today_sum": 0,
+            "month_count": 0, "month_sum": 0,
+            "total_count": 0,
+        }
 
 
 # ─── CLIENTS ────────────────────────────────────────────────

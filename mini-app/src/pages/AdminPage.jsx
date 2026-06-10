@@ -104,7 +104,7 @@ export default function AdminPage() {
   const photoInputRef = useRef()
 
   const loadOrders   = () => api.getAllOrders().then(setOrders).catch(console.warn)
-  const loadStats    = () => api.getStats().then(setStats).catch(console.warn)
+  const loadStats    = () => api.getStats().then(setStats).catch(e => console.warn('[stats]', e?.message || e))
   const loadProducts = () => api.getProducts().then(setProducts).catch(console.warn)
   const loadClients  = () => api.getClients().then(setClients).catch(console.warn)
   const loadExpenses = () => api.getExpenses().then(setExpenses).catch(console.warn)
@@ -665,7 +665,7 @@ export default function AdminPage() {
                                 <span className="text-gray-500 dark:text-gray-400">Себестоимость</span>
                               </div>
                               <div className="flex items-center gap-1.5">
-                                <span className="w-2.5 h-2.5 rounded-sm bg-orange-500 flex-shrink-0" />
+                                <span className="w-2.5 h-2.5 rounded-sm bg-red-500 flex-shrink-0" />
                                 <span className="text-gray-500 dark:text-gray-400">Доп. расходы</span>
                               </div>
                               <div className="flex items-center gap-1.5">
@@ -688,10 +688,10 @@ export default function AdminPage() {
                             </div>
                             <div>
                               <p className="text-[10px] font-bold flex items-center gap-1">
-                                <span className="w-2 h-2 rounded-sm bg-orange-500 flex-shrink-0" />
+                                <span className="w-2 h-2 rounded-sm bg-red-500 flex-shrink-0" />
                                 <span className="text-gray-400 dark:text-gray-500">Доп. расх.</span>
                               </p>
-                              <p className="font-black text-sm text-orange-500">{fmt(explicitExp)} сом</p>
+                              <p className="font-black text-sm text-red-500">{fmt(explicitExp)} сом</p>
                             </div>
                             <div>
                               <p className="text-[10px] font-bold flex items-center gap-1">
@@ -721,8 +721,8 @@ export default function AdminPage() {
 
                         {/* ── Доп. расходы — оранжевый блок ── */}
                         <div className="rounded-xl p-3 mb-3"
-                          style={{ background: 'rgba(249,115,22,0.07)', border: '1px solid rgba(249,115,22,0.2)' }}>
-                          <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-orange-500">
+                          style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                          <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-red-500">
                             🧾 Доп. расходы
                           </p>
 

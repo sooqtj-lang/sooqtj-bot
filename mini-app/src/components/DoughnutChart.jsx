@@ -34,7 +34,7 @@ export default function DoughnutChart({
         {/* доп. расходы — оранжевый */}
         {explicitExp > 0 && (
           <circle cx={r} cy={r} r={innerR} fill="none"
-            stroke="#F97316"
+            stroke="#EF4444"
             strokeWidth={stroke}
             strokeDasharray={`${expDash} ${c}`}
             strokeDashoffset={0}
