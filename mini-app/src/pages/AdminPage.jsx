@@ -656,7 +656,24 @@ export default function AdminPage() {
                           💰 Финансы (Доставлено)
                         </p>
                         <div className="flex items-center gap-4 mb-3">
-                          <DoughnutChart income={netProfit} expense={totalExpense} size={150} />
+                          <div className="flex flex-col items-center gap-2">
+                            <DoughnutChart income={netProfit} costOfGoods={costOfGoods} expenses={explicitExp} size={130} />
+                            {/* legend */}
+                            <div className="flex flex-col gap-1 text-[10px] font-bold">
+                              <div className="flex items-center gap-1.5">
+                                <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: '#F5C518', opacity: 0.85 }} />
+                                <span className="text-gray-500 dark:text-gray-400">Себестоимость</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="w-2.5 h-2.5 rounded-sm bg-orange-500 flex-shrink-0" />
+                                <span className="text-gray-500 dark:text-gray-400">Доп. расходы</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="w-2.5 h-2.5 rounded-sm bg-green-500 flex-shrink-0" />
+                                <span className="text-gray-500 dark:text-gray-400">Прибыль</span>
+                              </div>
+                            </div>
+                          </div>
                           <div className="flex-1 space-y-2">
                             <div>
                               <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold">Выручка</p>
@@ -664,15 +681,22 @@ export default function AdminPage() {
                             </div>
                             <div>
                               <p className="text-[10px] font-bold flex items-center gap-1">
-                                <span className="w-2 h-2 bg-red-500 rounded-full" />
-                                <span className="text-gray-400 dark:text-gray-500">Расход</span>
+                                <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: '#F5C518', opacity: 0.85 }} />
+                                <span className="text-gray-400 dark:text-gray-500">Себест.</span>
                               </p>
-                              <p className="font-black text-sm text-red-500">{fmt(totalExpense)} сом</p>
+                              <p className="font-black text-sm text-yellow-600 dark:text-yellow-500">{fmt(costOfGoods)} сом</p>
                             </div>
                             <div>
                               <p className="text-[10px] font-bold flex items-center gap-1">
-                                <span className="w-2 h-2 bg-green-500 rounded-full" />
-                                <span className="text-gray-400 dark:text-gray-500">Чистая прибыль</span>
+                                <span className="w-2 h-2 rounded-sm bg-orange-500 flex-shrink-0" />
+                                <span className="text-gray-400 dark:text-gray-500">Доп. расх.</span>
+                              </p>
+                              <p className="font-black text-sm text-orange-500">{fmt(explicitExp)} сом</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-sm bg-green-500 flex-shrink-0" />
+                                <span className="text-gray-400 dark:text-gray-500">Прибыль</span>
                               </p>
                               <p className="font-black text-sm text-green-500">{fmt(netProfit)} сом</p>
                             </div>
