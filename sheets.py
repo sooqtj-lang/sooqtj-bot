@@ -407,6 +407,53 @@ def decrement_product_qty(product_id: str, quantity: int = 1) -> bool:
         return False
 
 
+def delete_order(order_id: str) -> bool:
+    """Delete a single order row by its id column. Returns True on success."""
+    ws = _ensure_orders_sheet()
+    try:
+        rows = ws.get_all_values()
+        target = str(order_id).strip()
+        for i, row in enumerate(rows):
+            if row and str(row[0]).strip() == target:
+                ws.delete_rows(i + 1)
+                return True
+        return False
+    except Exception as e:
+        print(f"[sheets] delete_order error: {e}")
+        return False
+
+
+def update_order_fields(order_id: str, fields: dict) -> bool:
+    """Update editable fields of an order (name, phone, address, product_name, quantity, price, status).
+    fields is a dict with any subset of those keys."""
+    ws = _ensure_orders_sheet()
+    try:
+        header = ws.row_values(1)
+        rows = ws.get_all_values()
+        target = str(order_id).strip()
+        for i, row in enumerate(rows):
+            if not row or str(row[0]).strip() != target:
+                continue
+            row_num = i + 1
+            updates = []
+            for key, val in fields.items():
+                try:
+                    col_idx = header.index(key)
+                    updates.append({
+                        "range": f"{_col_letter(col_idx)}{row_num}",
+                        "values": [[val]],
+                    })
+                except ValueError:
+                    pass
+            if updates:
+                ws.batch_update(updates)
+            return True
+        return False
+    except Exception as e:
+        print(f"[sheets] update_order_fields error: {e}")
+        return False
+
+
 def clear_orders() -> int:
     """Clear all order rows and restore only the header. Returns count of deleted rows.
     Uses ws.clear() + single header write instead of row-by-row deletion (avoids timeout)."""
