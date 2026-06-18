@@ -1603,6 +1603,31 @@ export default function AdminPage() {
                 </div>
               </div>
 
+              {/* Net profit preview */}
+              {(() => {
+                const finalPrice = Math.max(0, (Number(mo.price) || 0) - (Number(mo.discount) || 0))
+                const qtyN = Number(mo.quantity) || 1
+                const op = mo.article ? productByArticle[mo.article] : null
+                const cost = op ? computeCost(op).total * qtyN : null
+                const profit = cost !== null ? finalPrice - cost : null
+                if (profit === null) return null
+                return (
+                  <div className={`rounded-xl px-4 py-3 flex items-center justify-between ${
+                    profit >= 0
+                      ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50'
+                      : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50'
+                  }`}>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">💰 Чистая прибыль</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">с/с: {fmt(cost)} сом × {qtyN} шт</p>
+                    </div>
+                    <p className={`text-xl font-black ${profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
+                      {profit >= 0 ? '+' : ''}{fmt(profit)} <span className="text-sm font-bold opacity-70">сом</span>
+                    </p>
+                  </div>
+                )
+              })()}
+
               <button onClick={submitManualOrder}
                 className="w-full gold text-[#111] font-black py-3.5 rounded-2xl text-sm mt-2 active:scale-95 transition-transform shadow-[0_4px_16px_rgba(245,197,24,0.35)]">
                 Добавить заказ
